@@ -22,7 +22,7 @@ function varargout = vesSegment(varargin)
 
 % Edit the above text to modify the response to help vesSegment
 
-% Last Modified by GUIDE v2.5 28-Jun-2017 11:17:03
+% Last Modified by GUIDE v2.5 13-Jul-2017 11:33:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -634,3 +634,43 @@ function checkbox_showSeg_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of checkbox_showSeg
 draw(hObject, eventdata, handles);
+
+
+% --------------------------------------------------------------------
+function Filters_ResetFilter_Callback(hObject, eventdata, handles)
+% hObject    handle to Filters_ResetFilter (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global Data
+
+if isfield(Data,'angioF')
+    Data = rmfield(Data,'angioF');
+end
+
+if isfield(Data,'angioT')
+    Data = rmfield(Data,'angioT');
+end
+
+% --------------------------------------------------------------------
+function File_savedata_Callback(hObject, eventdata, handles)
+% hObject    handle to File_savedata (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global Data
+if isfield(Data,'angioF')|| isfield(Data,'angioT') || isfield(Data,'segangio')
+    if isfield(Data,'angioF')
+        Output.angioF = Data.angioF;
+    end
+    if isfield(Data,'angioT')
+        Output.angioT = Data.angioT;
+    end
+    if isfield(Data,'segangio')
+        Output.segangio = Data.segangio;
+    end
+    [FileName,PathName] = uiputfile('*.mat');
+    save([PathName FileName],'Output');
+end
+    
+
