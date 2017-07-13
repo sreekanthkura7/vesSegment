@@ -451,12 +451,15 @@ prompt = {'Please enter sigma for Gaussian Filter'};
 defaultans = {'2'};
 x = inputdlg(prompt,'Gaussian Filter',1,defaultans);
 sigma = str2double(x{1});
-if isfiled(Data,'angioF')
+if isfield(Data,'angioF')
     I = Data.angioF;
 else
     I = Data.angio;
 end
+h = waitbar(0,'Please wait... applying gaussian filter');
 Data.angioF = imgaussfilt3(I,sigma);
+waitbar(1);
+close(h);
 
 % --------------------------------------------------------------------
 function Filters_MedFilter_Callback(hObject, eventdata, handles)
@@ -464,19 +467,21 @@ function Filters_MedFilter_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global Data
-prompt = {'Enter filter size in Z :','Enter filter size in X :','Enter filter size in Y :'}
+prompt = {'Enter filter size in Z :','Enter filter size in X :','Enter filter size in Y :'};
 defaultans = {'3','3','3'};
 x = inputdlg(prompt,'Filter Size',1,defaultans );
 sz = str2double(x{1});
 sx = str2double(x{2});
 sy = str2double(x{3});
-if isfiled(Data,'angioF')
+if isfield(Data,'angioF')
     I = Data.angioF;
 else
     I = Data.angio;
 end
+h = waitbar(0,'Please wait... applying Median filter');
 Data.angioF = medfilt3(I,[sz sx sy]);
-
+waitbar(1);
+close(h);
 
 
 % --------------------------------------------------------------------
@@ -503,9 +508,10 @@ gamma12 = 0.5;
 gamma23 = 0.5;
 T = zeros(k,l,m);
 sigma = [3];
+h = waitbar(0,'Please wait... applying Tubeness filter');
 for i = 1:length(sigma)
     
-    
+    waitbar(i-1/length(sigma));
     [Dxx, Dyy, Dzz, Dxy, Dxz, Dyz] = Hessian3D(I,sigma(i));
     
     %Normalizing the Hessian Matrix
@@ -513,7 +519,8 @@ for i = 1:length(sigma)
     
     
     
-    [Lambda1,Lambda2,Lambda3,V1,V2,V3] = eig3volume(Dxx,Dxy,Dxz,Dyy,Dyz,Dzz);
+    [Lambda1,Lambda2,Lambda3,~,~,~] = eig3volume(Dxx,Dxy,Dxz,Dyy,Dyz,Dzz);
+
     
     SortL = sort([Lambda1(:)'; Lambda2(:)'; Lambda3(:)'],'descend');
     Lambda1 = reshape(SortL(1,:),size(Lambda1));
@@ -556,7 +563,7 @@ T = E;
 
 T = (T-min(T(:)))/(max(T(:))-min(T(:)));
 Data.angioT = T;
-
+close(h);
 
 % --------------------------------------------------------------------
 function Filters_thresholding_Callback(hObject, eventdata, handles)
