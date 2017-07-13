@@ -496,6 +496,7 @@ if isfield(Data,'angioF')
 else
     I = Data.angio;
 end
+I = double(I);
 Z = size(I,3);
 beta = 100;
 c = 500;
@@ -514,8 +515,8 @@ for i = 1:length(sigma)
     waitbar(i-1/length(sigma));
     [Dxx, Dyy, Dzz, Dxy, Dxz, Dyz] = Hessian3D(I,sigma(i));
     
-    %Normalizing the Hessian Matrix
-    %Dxx = i^2*Dxx; Dyy = i^2*Dyy;  Dzz = i^2*Dzz; Dxy = i^2*Dxy;  Dxz = i^2*Dxz; Dyz = i^2*Dyz;
+%     Normalizing the Hessian Matrix
+%     Dxx = i^2*Dxx; Dyy = i^2*Dyy;  Dzz = i^2*Dzz; Dxy = i^2*Dxy;  Dxz = i^2*Dxz; Dyz = i^2*Dyz;
     
     
     
