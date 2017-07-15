@@ -574,7 +574,7 @@ function Filters_thresholding_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 global Data
-
+% Check if angioT exists before segmentation
 if isfield(Data,'angioT')
     prompt = {'Please enter threshold value for segmentation'};
     defaultans = {'0.075'};
