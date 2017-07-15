@@ -146,15 +146,15 @@ YMIP = str2double(get(handles.edit_YMIP,'String'));
 Yendframe = min(max(Ystartframe+YMIP-1,1),Sy);
 
 Zimg = squeeze(max(I(Zstartframe:Zendframe,:,:),[],1));
-Ximg = squeeze(max(I(:,Xstartframe:Xendframe,:),[],2));
-Yimg = squeeze(max(I(:,:,Ystartframe:Yendframe),[],3));
-ZMIPimg = squeeze(max(I,[],1));
+%Ximg = squeeze(max(I(:,Xstartframe:Xendframe,:),[],2));
+%Yimg = squeeze(max(I(:,:,Ystartframe:Yendframe),[],3));
+%ZMIPimg = squeeze(max(I,[],1));
 
 if isfield(Data,'segangio') && (get(handles.checkbox_showSeg,'Value') == 1)
     ZimgS = squeeze(max(Data.segangio(Zstartframe:Zendframe,:,:),[],1));
-    XimgS = squeeze(max(Data.segangio(:,Xstartframe:Xendframe,:),[],2));
-    YimgS = squeeze(max(Data.segangio(:,:,Ystartframe:Yendframe),[],3));
-    imgS = squeeze(max(Data.segangio,[],1));
+%    XimgS = squeeze(max(Data.segangio(:,Xstartframe:Xendframe,:),[],2));
+%    YimgS = squeeze(max(Data.segangio(:,:,Ystartframe:Yendframe),[],3));
+%    imgS = squeeze(max(Data.segangio,[],1));
 end
 
 axes(handles.axes1)
@@ -491,6 +491,8 @@ function Filters_TubenessFilter_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 global Data
+h = waitbar(0,'Please wait... applying Tubeness filter');
+
 if isfield(Data,'angioF')
     I = Data.angioF;
 else
@@ -509,7 +511,6 @@ gamma12 = 0.5;
 gamma23 = 0.5;
 T = zeros(k,l,m);
 sigma = [3];
-h = waitbar(0,'Please wait... applying Tubeness filter');
 for i = 1:length(sigma)
     
     waitbar(i-1/length(sigma));
