@@ -89,11 +89,25 @@ function File_loaddata_Callback(hObject, eventdata, handles)
 global Data
 
 [filename,pathname] = uigetfile({'*.mat;*.tiff;*.tif'},'Please select the Angiogram Data');
+h = waitbar(0,'Please wait... loading the data');
 [pathstr,name,ext] = fileparts(filename);
 if strcmp(ext,'.mat')
-    temp = load([pathname filename]);
-    fn = fieldnames(temp);
-    Data.angio = temp.(fn{1});
+%     temp = load([pathname filename]);
+%     fn = fieldnames(temp);
+%     Data.angio = temp.(fn{1});
+    load([pathname filename]);
+    if exist('angio','var')
+        Data.angio = angio;
+    end
+    if exist('angioF','var')
+        Data.angioF = angioF;
+    end
+    if exist('angioT','var')
+        Data.angioT = angioT;
+    end
+    if exist('segangio','var')
+        Data.segangio = segangio;
+    end
 elseif strcmp(ext,'.tiff') || strcmp(ext,'.tif')
     info = imfinfo([pathname filename]);
     for u = 1:length(info)
@@ -114,6 +128,8 @@ set(handles.edit_Xstartframe,'String',num2str(1));
 set(handles.edit_XMIP,'String',num2str(x));
 set(handles.edit_Ystartframe,'String',num2str(1));
 set(handles.edit_YMIP,'String',num2str(y));
+waitbar(1);
+close(h);
 
 draw(hObject, eventdata, handles);
 
@@ -660,6 +676,7 @@ function File_savedata_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+h = waitbar(0,'Please wait... saving the data');
 global Data
 if isfield(Data,'angioF')|| isfield(Data,'angioT') || isfield(Data,'segangio')
     if isfield(Data,'angioF')
@@ -674,5 +691,7 @@ if isfield(Data,'angioF')|| isfield(Data,'angioT') || isfield(Data,'segangio')
     [FileName,PathName] = uiputfile('*.mat');
     save([PathName FileName],'Output');
 end
+waitbar(1);
+close(h);
     
 
