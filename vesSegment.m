@@ -90,23 +90,52 @@ global Data
 
 [filename,pathname] = uigetfile({'*.mat;*.tiff;*.tif'},'Please select the Angiogram Data');
 h = waitbar(0,'Please wait... loading the data');
-[pathstr,name,ext] = fileparts(filename);
+[~,~,ext] = fileparts(filename);
 if strcmp(ext,'.mat')
-%     temp = load([pathname filename]);
-%     fn = fieldnames(temp);
-%     Data.angio = temp.(fn{1});
     load([pathname filename]);
-    if exist('angio','var')
-        Data.angio = angio;
-    end
-    if exist('angioF','var')
-        Data.angioF = angioF;
-    end
-    if exist('angioT','var')
-        Data.angioT = angioT;
-    end
-    if exist('segangio','var')
-        Data.segangio = segangio;
+    if exist('Output','var')
+        if isfield(Data,'angio')
+            if ~strcmp(Data.rawdatapath,Output.rawdatapath)
+                error('Output raw data path and currently loaded raw data path did not match');
+            end
+        else
+            [~,~,ext] = fileparts(Output.rawdatapath);
+            if strcmp(ext,'.mat')
+                if ~exist(Output.rawdatapath,'file')
+                    error('Raw data was moved from Original location');
+                end
+                temp = load(Output.rawdatapath);
+                fn = fieldnames(temp);
+                Data.angio = temp.(fn{1});
+            elseif strcmp(ext,'.tiff') || strcmp(ext,'.tif')
+                info = imfinfo(Output.rawdatapath);
+                for u = 1:length(info)
+                    if u == 1
+                        temp = imread(Output.rawdatapath,1);
+                        angio = zeros([length(info) size(temp)]);
+                        angio(u,:,:) = temp;
+                    else
+                        angio(u,:,:) = imread(Output.rawdatapath,u);
+                    end
+                end
+                Data.angio = angio;
+            end
+            Data.rawdatapath = Output.rawdatapath;
+        end
+        if isfield(Output,'angioF')
+            Data.angioF = Output.angioF;
+        end
+        if isfield(Output,'angioT')
+            Data.angioT = Output.angioT;
+        end
+        if isfield(Output,'segangio')
+            Data.segangio = Output.segangio;
+        end
+    else
+        temp = load([pathname filename]);
+        fn = fieldnames(temp);
+        Data.angio = temp.(fn{1});
+        Data.rawdatapath = [pathname filename];
     end
 elseif strcmp(ext,'.tiff') || strcmp(ext,'.tif')
     info = imfinfo([pathname filename]);
@@ -119,7 +148,8 @@ elseif strcmp(ext,'.tiff') || strcmp(ext,'.tif')
             angio(u,:,:) = imread([pathname filename],u);
         end
     end
-    Data.angio = angio; 
+    Data.angio = angio;
+    Data.rawdatapath = [pathname filename];
 end
 [z,x,y] = size(Data.angio);
 set(handles.edit_Zstartframe,'String',num2str(1));
@@ -679,6 +709,9 @@ function File_savedata_Callback(hObject, eventdata, handles)
 h = waitbar(0,'Please wait... saving the data');
 global Data
 if isfield(Data,'angioF')|| isfield(Data,'angioT') || isfield(Data,'segangio')
+    if isfield(Data,'rawdatapath')
+        Output.rawdatapath = Data.rawdatapath;
+    end
     if isfield(Data,'angioF')
         Output.angioF = Data.angioF;
     end
