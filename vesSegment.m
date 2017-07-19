@@ -22,7 +22,7 @@ function varargout = vesSegment(varargin)
 
 % Edit the above text to modify the response to help vesSegment
 
-% Last Modified by GUIDE v2.5 13-Jul-2017 11:33:35
+% Last Modified by GUIDE v2.5 19-Jul-2017 13:38:16
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -87,7 +87,7 @@ function File_loaddata_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 global Data
-
+% clear all
 [filename,pathname] = uigetfile({'*.mat;*.tiff;*.tif'},'Please select the Angiogram Data');
 h = waitbar(0,'Please wait... loading the data');
 [~,~,ext] = fileparts(filename);
@@ -168,8 +168,12 @@ function draw(hObject, eventdata, handles)
 
 global Data
 
-if isfield(Data,'angioF') && (get(handles.checkbox_showFiltData,'Value') == 1)
-    I = Data.angioF;
+if (isfield(Data,'angioF') || isfield(Data,'angioT')) && (get(handles.checkbox_showFiltData,'Value') == 1)
+    if isfield(Data,'angioT')
+        I = Data.angioT;
+    else
+        I = Data.angioF;
+    end
 elseif isfield(Data,'segangio') && (get(handles.checkbox_showFiltData,'Value') == 0) && (get(handles.checkbox_showRawData,'Value') == 0) && (get(handles.checkbox_showSeg,'Value') == 1)
     I = Data.segangio;
 else
@@ -206,7 +210,7 @@ end
 axes(handles.axes1)
 colormap('gray')
 imagesc(Zimg)
-if (get(handles.checkbox_showFiltData,'Value') == 1) || (get(handles.checkbox_showRawData,'Value') == 1)
+% if (get(handles.checkbox_showFiltData,'Value') == 1) || (get(handles.checkbox_showRawData,'Value') == 1)
     if isfield(Data,'angioT') && (get(handles.checkbox_showSeg,'Value') == 1)
         hold on
         img = double(ZimgS);
@@ -216,7 +220,7 @@ if (get(handles.checkbox_showFiltData,'Value') == 1) || (get(handles.checkbox_sh
         hold off
         set(h, 'AlphaData', img*0.25)
     end
-end
+% end
 axis image
 axis on
 
@@ -613,32 +617,32 @@ T = (T-min(T(:)))/(max(T(:))-min(T(:)));
 Data.angioT = T;
 close(h);
 
-% --------------------------------------------------------------------
-function Filters_thresholding_Callback(hObject, eventdata, handles)
-% hObject    handle to Filters_thresholding (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-global Data
-% Check if angioT exists before segmentation
-if isfield(Data,'angioT')
-    prompt = {'Please enter threshold value for segmentation'};
-    defaultans = {'0.075'};
-    x = inputdlg(prompt,'Segmenatation',1,defaultans);
-    threshold = str2double(x{1});
-    T = Data.angioT;
-    T_seg = zeros(size(T));
-    idx = find(T > threshold);
-    T_seg(idx) = 1;
-    CC = bwconncomp(T_seg);
-    T_segM = T_seg;
-    for uuu = 1:length(CC.PixelIdxList)
-         if length(CC.PixelIdxList{uuu}) < 100
-             T_segM(CC.PixelIdxList{uuu}) = 0;
-         end
-    end 
-    Data.segangio = T_segM;
-end
+% % --------------------------------------------------------------------
+% function Filters_thresholding_Callback(hObject, eventdata, handles)
+% % hObject    handle to Filters_thresholding (see GCBO)
+% % eventdata  reserved - to be defined in a future version of MATLAB
+% % handles    structure with handles and user data (see GUIDATA)
+% 
+% global Data
+% % Check if angioT exists before segmentation
+% if isfield(Data,'angioT')
+%     prompt = {'Please enter threshold value for segmentation'};
+%     defaultans = {'0.075'};
+%     x = inputdlg(prompt,'Segmenatation',1,defaultans);
+%     threshold = str2double(x{1});
+%     T = Data.angioT;
+%     T_seg = zeros(size(T));
+%     idx = find(T > threshold);
+%     T_seg(idx) = 1;
+%     CC = bwconncomp(T_seg);
+%     T_segM = T_seg;
+%     for uuu = 1:length(CC.PixelIdxList)
+%          if length(CC.PixelIdxList{uuu}) < 100
+%              T_segM(CC.PixelIdxList{uuu}) = 0;
+%          end
+%     end 
+%     Data.segangio = T_segM;
+% end
 
 
 % --- Executes on button press in checkbox_showRawData.
@@ -728,3 +732,41 @@ waitbar(1);
 close(h);
     
 
+
+
+% --------------------------------------------------------------------
+function Segmentation_Callback(hObject, eventdata, handles)
+% hObject    handle to Segmentation (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --------------------------------------------------------------------
+function segmentation_thresholding_Callback(hObject, eventdata, handles)
+% hObject    handle to segmentation_thresholding (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+h = waitbar(0,'Please wait... saving the data');
+global Data
+% Check if angioT exists before segmentation
+if isfield(Data,'angioT')
+    prompt = {'Please enter threshold value for segmentation'};
+    defaultans = {'0.075'};
+    x = inputdlg(prompt,'Segmenatation',1,defaultans);
+    threshold = str2double(x{1});
+    T = Data.angioT;
+    T_seg = zeros(size(T));
+    idx = find(T > threshold);
+    T_seg(idx) = 1;
+    CC = bwconncomp(T_seg);
+    T_segM = T_seg;
+    for uuu = 1:length(CC.PixelIdxList)
+         if length(CC.PixelIdxList{uuu}) < 100
+             T_segM(CC.PixelIdxList{uuu}) = 0;
+         end
+    end 
+    Data.segangio = T_segM;
+end
+waitbar(1);
+close(h);
