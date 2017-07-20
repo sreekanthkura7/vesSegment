@@ -224,7 +224,7 @@ else
 end
 axis image
 axis on
-elseif get(handles.checkbox_showSeg,'Value') == 1
+elseif get(handles.checkbox_showSeg,'Value') == 1 && isfield(Data,'angioT')
 %     C = [0 0 0; 0 0.25 0; 0 0.5 0; 0 1 0];
     img = double(ZimgS);
     green = cat(3, zeros(size(img)),img*0.25, zeros(size(img)));
@@ -244,6 +244,9 @@ if isfield(Data,'procSteps')
             str = sprintf('%s\n%s',str,string(Data.procSteps(u,1)));
         end
     end
+    set(handles.edit_dispProcSteps,'String',str);
+else
+    str = '';
     set(handles.edit_dispProcSteps,'String',str);
 end
 
@@ -538,6 +541,7 @@ else
 end
 waitbar(1);
 close(h);
+draw(hObject, eventdata, handles);
 
 % --------------------------------------------------------------------
 function Filters_MedFilter_Callback(hObject, eventdata, handles)
@@ -565,6 +569,7 @@ else
 end
 waitbar(1);
 close(h);
+draw(hObject, eventdata, handles);
 
 
 % --------------------------------------------------------------------
@@ -654,6 +659,7 @@ else
     Data.procSteps =  {{'Tubeness Filter'},{'Sigma'},{sigma}};
 end
 close(h);
+draw(hObject, eventdata, handles);
 
 % % --------------------------------------------------------------------
 % function Filters_thresholding_Callback(hObject, eventdata, handles)
@@ -742,6 +748,15 @@ if isfield(Data,'angioT')
     Data = rmfield(Data,'angioT');
 end
 
+if isfield(Data,'segangio')
+    Data = rmfield(Data,'segangio');
+end
+
+if isfield(Data,'procSteps')
+    Data = rmfield(Data,'procSteps');
+end
+draw(hObject, eventdata, handles);
+
 % --------------------------------------------------------------------
 function File_savedata_Callback(hObject, eventdata, handles)
 % hObject    handle to File_savedata (see GCBO)
@@ -813,6 +828,7 @@ if isfield(Data,'angioT')
 end
 waitbar(1);
 close(h);
+draw(hObject, eventdata, handles);
 
 
 
