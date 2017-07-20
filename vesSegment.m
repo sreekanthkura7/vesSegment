@@ -22,7 +22,7 @@ function varargout = vesSegment(varargin)
 
 % Edit the above text to modify the response to help vesSegment
 
-% Last Modified by GUIDE v2.5 19-Jul-2017 13:38:16
+% Last Modified by GUIDE v2.5 20-Jul-2017 11:40:52
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -175,7 +175,7 @@ if (isfield(Data,'angioF') || isfield(Data,'angioT')) && (get(handles.checkbox_s
         I = Data.angioF;
     end
 elseif isfield(Data,'segangio') && (get(handles.checkbox_showFiltData,'Value') == 0) && (get(handles.checkbox_showRawData,'Value') == 0) && (get(handles.checkbox_showSeg,'Value') == 1)
-    I = Data.segangio;
+    I = Data.segangio*0;
 else
     I = Data.angio;
 end
@@ -208,21 +208,44 @@ if isfield(Data,'segangio') && (get(handles.checkbox_showSeg,'Value') == 1)
 end
 
 axes(handles.axes1)
+if (get(handles.checkbox_showFiltData,'Value') == 1) || (get(handles.checkbox_showRawData,'Value') == 1)
 colormap('gray')
 imagesc(Zimg)
-% if (get(handles.checkbox_showFiltData,'Value') == 1) || (get(handles.checkbox_showRawData,'Value') == 1)
-    if isfield(Data,'angioT') && (get(handles.checkbox_showSeg,'Value') == 1)
-        hold on
-        img = double(ZimgS);
-        green = cat(3, zeros(size(img)),ones(size(img)), zeros(size(img)));
-        hold on
-        h = imshow(green);
-        hold off
-        set(h, 'AlphaData', img*0.25)
-    end
-% end
+if isfield(Data,'angioT') && (get(handles.checkbox_showSeg,'Value') == 1)
+    hold on
+    img = double(ZimgS);
+    green = cat(3, zeros(size(img)),ones(size(img)), zeros(size(img)));
+    hold on
+    h = imshow(green);
+    hold off
+    set(h, 'AlphaData', img*0.25)
+else
+    colorbar;
+end
 axis image
 axis on
+elseif get(handles.checkbox_showSeg,'Value') == 1
+%     C = [0 0 0; 0 0.25 0; 0 0.5 0; 0 1 0];
+    img = double(ZimgS);
+    green = cat(3, zeros(size(img)),img*0.25, zeros(size(img)));
+    imagesc(green);
+%     colormap(C);
+%     colorbar; 
+    axis image; axis on
+%     set(h, 'AlphaData', img*0.25)
+end
+
+% Display procSteps in text box
+if isfield(Data,'procSteps')
+    for u = 1:size(Data.procSteps,1)
+        if u == 1
+            str = sprintf('%s',string(Data.procSteps(u,1)));
+        else
+            str = sprintf('%s\n%s',str,string(Data.procSteps(u,1)));
+        end
+    end
+    set(handles.edit_dispProcSteps,'String',str);
+end
 
 % axes(handles.axes2)
 % colormap('gray')
@@ -508,6 +531,11 @@ else
 end
 h = waitbar(0,'Please wait... applying gaussian filter');
 Data.angioF = imgaussfilt3(I,sigma);
+if isfield(Data,'procSteps')
+    Data.procSteps(end+1,:) =  {{'Gaussian Filter'},{'Sigma'},{sigma}};
+else
+    Data.procSteps = {{'Gaussian Filter'},{'Sigma'},{sigma}};
+end
 waitbar(1);
 close(h);
 
@@ -530,6 +558,11 @@ else
 end
 h = waitbar(0,'Please wait... applying Median filter');
 Data.angioF = medfilt3(I,[sz sx sy]);
+if isfield(Data,'procSteps')
+    Data.procSteps(end+1,:) =  {{'Median Filter'},{'Size'},{[sz sx sy]}};
+else
+    Data.procSteps =  {{'Median Filter'},{'Size'},{[sz sx sy]}};
+end
 waitbar(1);
 close(h);
 
@@ -549,13 +582,13 @@ else
     I = Data.angio;
 end
 I = double(I);
-Z = size(I,3);
-beta = 100;
-c = 500;
+% Z = size(I,3);
+% beta = 100;
+% c = 500;
 [k,l,m] = size(I);
-[nz,nx,ny] = size(I);
-L   = zeros(k,l,m);
-Vs  = zeros(k,l,m);
+% [nz,nx,ny] = size(I);
+% L   = zeros(k,l,m);
+% Vs  = zeros(k,l,m);
 alpha = 0.25;
 gamma12 = 0.5;
 gamma23 = 0.5;
@@ -615,6 +648,11 @@ T = E;
 
 T = (T-min(T(:)))/(max(T(:))-min(T(:)));
 Data.angioT = T;
+if isfield(Data,'procSteps')
+    Data.procSteps(end+1,:) =  {{'Tubeness Filter'},{'Sigma'},{sigma}};
+else
+    Data.procSteps =  {{'Tubeness Filter'},{'Sigma'},{sigma}};
+end
 close(h);
 
 % % --------------------------------------------------------------------
@@ -767,6 +805,34 @@ if isfield(Data,'angioT')
          end
     end 
     Data.segangio = T_segM;
+    if isfield(Data,'procSteps')
+        Data.procSteps(end+1,:) =  {{'Thresholding on tubeness filter'},{'Threshold value'},{threshold}};
+    else
+        Data.procSteps =  {{'Thresholding on tubeness filter'},{'Threshold value'},{threshold}};
+    end
 end
 waitbar(1);
 close(h);
+
+
+
+function edit_dispProcSteps_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_dispProcSteps (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_dispProcSteps as text
+%        str2double(get(hObject,'String')) returns contents of edit_dispProcSteps as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_dispProcSteps_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_dispProcSteps (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
