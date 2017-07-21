@@ -1,4 +1,5 @@
-function [seg_vol, seg_prob] = segment_vessels_random_walker(vol, options)
+function [seg_vol, seg_prob, fg_seed_vol, bg_seed_vol] = ...
+        segment_vessels_random_walker(vol, options)
 
 % Segment an angiogram into foreground (vessels) and background. For
 % efficiency, this method breaks the angiogram volume into overlapping
@@ -15,18 +16,19 @@ function [seg_vol, seg_prob] = segment_vessels_random_walker(vol, options)
 % - region_size: [default 50] The number of voxels on a side for the
 %                sub-volumes.
 %
-% - guess_seeds: Whether to automatically take a best guess at seed
-%                locations based on analyzing image intensity. Either
-%                this field, or the fg_seed_vol and bg_seed_vol should
-%                be set.
-%
 % - fg_seed_vol: [default []] A volume the same size as vol, where
 %                voxel values indicate whether a voxel is
-%                identified as a foreground seed (1) or not (0)
+%                identified as a foreground seed (1) or not
+%                (0). Note that if this parameter is missing or
+%                empty, the foreground seeds will be automatically
+%                guessed (see options below).
 %
 % - bg_seed_vol: [default []] A volume the same size as vol, where
-%                voxel values indicate whether a voxel is
-%                identified as a background seed (1) or not (0)
+%                voxel values indicate whether a voxel is identified
+%                as a background seed (1) or not (0). Note that if
+%                this parameter is missing or empty, the background
+%                seeds will be automatically guessed (see options
+%                below).
 %
 % - fg_percentage: [default 1%] the percentage of the the highest
 %                  valued voxels in each fg_win to assume are
@@ -71,25 +73,10 @@ function [seg_vol, seg_prob] = segment_vessels_random_walker(vol, options)
         options = struct();
     end
 
-    if ~isfield(options, 'fg_seeds') && ~isfield(options, 'guess_seeds')
-        error('either fg_seeds or guess_seeds must be specified in options')
-        return
-    end
-
-    if ~isfield(options, 'bg_seeds') && ~isfield(options, 'guess_seeds')
-        error('either bg_seeds or guess_seeds must be specified in options')
-        return
-    end
-
     if ~isfield(options, 'mask') || isempty(options.mask)
         options.mask = ones(size(vol));
     end
     mask = options.mask;
-
-    if ~isfield(options, 'guess_seeds')
-        options.guess_seeds = 0;
-    end
-    guess_seeds = options.guess_seeds;
 
     if ~isfield(options, 'region_size')
         options.region_size = 50;
@@ -155,10 +142,13 @@ function [seg_vol, seg_prob] = segment_vessels_random_walker(vol, options)
     seg_vol = zeros(size(vol));
     seg_prob = zeros(size(vol));
 
-    % find the seeds
-    if guess_seeds
+    % find the seeds, if necessary
+    if isempty(fg_seed_vol)
         fg_seed_vol = find_seeds_by_threshold(...
             vol, fg_percentage, 1, fg_win, [], verbose);
+    end
+
+    if isempty(bg_seed_vol)
         bg_seed_vol = find_seeds_by_threshold(...
             vol, bg_percentage, 0, bg_win, [], verbose);
     end
