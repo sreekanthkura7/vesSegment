@@ -22,7 +22,7 @@ function varargout = vesSegment(varargin)
 
 % Edit the above text to modify the response to help vesSegment
 
-% Last Modified by GUIDE v2.5 20-Jul-2017 11:40:52
+% Last Modified by GUIDE v2.5 24-Jul-2017 14:08:03
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -121,6 +121,9 @@ if strcmp(ext,'.mat')
                 Data.angio = angio;
             end
             Data.rawdatapath = Output.rawdatapath;
+        end
+        if isfield(Output,'procSteps')
+            Data.segangio = Output.procSteps;
         end
         if isfield(Output,'angioF')
             Data.angioF = Output.angioF;
@@ -769,6 +772,9 @@ if isfield(Data,'angioF')|| isfield(Data,'angioT') || isfield(Data,'segangio')
     if isfield(Data,'rawdatapath')
         Output.rawdatapath = Data.rawdatapath;
     end
+    if isfield(Data,'procSteps')
+        Output.rawdatapath = Data.procSteps;
+    end
     if isfield(Data,'angioF')
         Output.angioF = Data.angioF;
     end
@@ -852,3 +858,19 @@ function edit_dispProcSteps_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --------------------------------------------------------------------
+function segmentation_SeedBasedSegmentation_Callback(hObject, eventdata, handles)
+% hObject    handle to segmentation_SeedBasedSegmentation (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global Data
+addpath(genpath([pwd '\seed_based_segmentation']));
+if isfield(Data,'segangio')
+    options.fg_seed_vol = Data.segangio;
+    [seg_vol, seg_prob, fg_seed_vol, bg_seed_vol] = segment_vessels_random_walker(Data.angio, options)
+    
+end
+
