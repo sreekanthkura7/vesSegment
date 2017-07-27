@@ -22,7 +22,7 @@ function varargout = vesSegment(varargin)
 
 % Edit the above text to modify the response to help vesSegment
 
-% Last Modified by GUIDE v2.5 24-Jul-2017 14:08:03
+% Last Modified by GUIDE v2.5 27-Jul-2017 13:43:41
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -157,10 +157,15 @@ end
 [z,x,y] = size(Data.angio);
 set(handles.edit_Zstartframe,'String',num2str(1));
 set(handles.edit_ZMIP,'String',num2str(z));
-set(handles.edit_Xstartframe,'String',num2str(1));
-set(handles.edit_XMIP,'String',num2str(x));
-set(handles.edit_Ystartframe,'String',num2str(1));
-set(handles.edit_YMIP,'String',num2str(y));
+% set(handles.edit_XcenterZoom,'String',num2str(1));
+% set(handles.edit_XwidthZoom,'String',num2str(x));
+% set(handles.edit_YcenterZoom,'String',num2str(1));
+% set(handles.edit_YwidthZoom,'String',num2str(y));
+
+set(handles.edit_XcenterZoom,'String',num2str(mean([1 size(Data.angio,2)-1])))
+set(handles.edit_YcenterZoom,'String',num2str(mean([1 size(Data.angio,3)-1])))
+set(handles.edit_XwidthZoom,'String',num2str(size(Data.angio,2)));
+set(handles.edit_YwidthZoom,'String',num2str(size(Data.angio,2)));
 waitbar(1);
 close(h);
 
@@ -189,13 +194,13 @@ Zstartframe = str2double(get(handles.edit_Zstartframe,'String'));
 Zstartframe = min(max(Zstartframe,1),Sz);
 ZMIP = str2double(get(handles.edit_ZMIP,'String'));
 Zendframe = min(max(Zstartframe+ZMIP-1,1),Sz);
-Xstartframe = str2double(get(handles.edit_Xstartframe,'String'));
+Xstartframe = str2double(get(handles.edit_XcenterZoom,'String'));
 Xstartframe = min(max(Xstartframe,1),Sx);
-XMIP = str2double(get(handles.edit_XMIP,'String'));
+XMIP = str2double(get(handles.edit_XwidthZoom,'String'));
 Xendframe = min(max(Xstartframe+XMIP-1,1),Sx);
-Ystartframe = str2double(get(handles.edit_Ystartframe,'String'));
+Ystartframe = str2double(get(handles.edit_YcenterZoom,'String'));
 Ystartframe = min(max(Ystartframe,1),Sy);
-YMIP = str2double(get(handles.edit_YMIP,'String'));
+YMIP = str2double(get(handles.edit_YwidthZoom,'String'));
 Yendframe = min(max(Ystartframe+YMIP-1,1),Sy);
 
 Zimg = squeeze(max(I(Zstartframe:Zendframe,:,:),[],1));
@@ -219,14 +224,18 @@ if isfield(Data,'angioT') && (get(handles.checkbox_showSeg,'Value') == 1)
     img = double(ZimgS);
     green = cat(3, zeros(size(img)),ones(size(img)), zeros(size(img)));
     hold on
-    h = imshow(green);
+    h = imagesc(green);
     hold off
     set(h, 'AlphaData', img*0.25)
 else
     colorbar;
 end
-axis image
+% axis image
 axis on
+if isfield(Data,'ZoomXrange') && isfield(Data,'ZoomYrange')
+    xlim(Data.ZoomXrange);
+    ylim(Data.ZoomYrange);
+end
 elseif get(handles.checkbox_showSeg,'Value') == 1 && isfield(Data,'angioT')
 %     C = [0 0 0; 0 0.25 0; 0 0.5 0; 0 1 0];
     img = double(ZimgS);
@@ -234,7 +243,12 @@ elseif get(handles.checkbox_showSeg,'Value') == 1 && isfield(Data,'angioT')
     imagesc(green);
 %     colormap(C);
 %     colorbar; 
-    axis image; axis on
+%     axis image; 
+    axis on
+    if isfield(Data,'ZoomXrange') && isfield(Data,'ZoomYrange')
+        xlim(Data.ZoomXrange);
+        ylim(Data.ZoomYrange);
+    end
 %     set(h, 'AlphaData', img*0.25)
 end
 
@@ -326,19 +340,23 @@ end
 
 
 
-function edit_Xstartframe_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_Xstartframe (see GCBO)
+function edit_XcenterZoom_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_XcenterZoom (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit_Xstartframe as text
-%        str2double(get(hObject,'String')) returns contents of edit_Xstartframe as a double
+% Hints: get(hObject,'String') returns contents of edit_XcenterZoom as text
+%        str2double(get(hObject,'String')) returns contents of edit_XcenterZoom as a double
+global Data
+Xcenter = str2double(get(handles.edit_XcenterZoom,'String'));
+XwidthZoom = str2double(get(handles.edit_XwidthZoom,'String'));
+Data.ZoomXrange = [max((Xcenter-XwidthZoom/2),1) min((Xcenter+XwidthZoom/2),size(Data.angio,2))];
 draw(hObject, eventdata, handles);
 
 
 % --- Executes during object creation, after setting all properties.
-function edit_Xstartframe_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit_Xstartframe (see GCBO)
+function edit_XcenterZoom_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_XcenterZoom (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -350,19 +368,23 @@ end
 
 
 
-function edit_Ystartframe_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_Ystartframe (see GCBO)
+function edit_YcenterZoom_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_YcenterZoom (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit_Ystartframe as text
-%        str2double(get(hObject,'String')) returns contents of edit_Ystartframe as a double
+% Hints: get(hObject,'String') returns contents of edit_YcenterZoom as text
+%        str2double(get(hObject,'String')) returns contents of edit_YcenterZoom as a double
+global Data
+Ycenter = str2double(get(handles.edit_YcenterZoom,'String'));
+YwidthZoom = str2double(get(handles.edit_YwidthZoom,'String'));
+Data.ZoomYrange = [max((Ycenter-YwidthZoom/2),1) min((Ycenter+YwidthZoom/2),size(Data.angio,2))];
 draw(hObject, eventdata, handles);
 
 
 % --- Executes during object creation, after setting all properties.
-function edit_Ystartframe_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit_Ystartframe (see GCBO)
+function edit_YcenterZoom_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_YcenterZoom (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -398,21 +420,24 @@ end
 
 
 
-function edit_XMIP_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_XMIP (see GCBO)
+function edit_XwidthZoom_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_XwidthZoom (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit_XMIP as text
-%        str2double(get(hObject,'String')) returns contents of edit_XMIP as a double
-
+% Hints: get(hObject,'String') returns contents of edit_XwidthZoom as text
+%        str2double(get(hObject,'String')) returns contents of edit_XwidthZoom as a double
+global Data
+Xcenter = str2double(get(handles.edit_XcenterZoom,'String'));
+XwidthZoom = str2double(get(handles.edit_XwidthZoom,'String'));
+Data.ZoomXrange = [max((Xcenter-XwidthZoom/2),1) min((Xcenter+XwidthZoom/2),size(Data.angio,2))];
 
 draw(hObject, eventdata, handles);
 
 
 % --- Executes during object creation, after setting all properties.
-function edit_XMIP_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit_XMIP (see GCBO)
+function edit_XwidthZoom_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_XwidthZoom (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -424,19 +449,23 @@ end
 
 
 
-function edit_YMIP_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_YMIP (see GCBO)
+function edit_YwidthZoom_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_YwidthZoom (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit_YMIP as text
-%        str2double(get(hObject,'String')) returns contents of edit_YMIP as a double
+% Hints: get(hObject,'String') returns contents of edit_YwidthZoom as text
+%        str2double(get(hObject,'String')) returns contents of edit_YwidthZoom as a double
+global Data
+Ycenter = str2double(get(handles.edit_YcenterZoom,'String'));
+YwidthZoom = str2double(get(handles.edit_YwidthZoom,'String'));
+Data.ZoomYrange = [max((Ycenter-YwidthZoom/2),1) min((Ycenter+YwidthZoom/2),size(Data.angio,2))];
 
 draw(hObject, eventdata, handles);
 
 % --- Executes during object creation, after setting all properties.
-function edit_YMIP_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit_YMIP (see GCBO)
+function edit_YwidthZoom_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_YwidthZoom (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -463,9 +492,13 @@ function pushbutton_Xmoveleft_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_Xmoveleft (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-ii = str2double(get(handles.edit_Xstartframe,'String'));
+global Data
+ii = str2double(get(handles.edit_XcenterZoom,'String'));
 ii = ii-1;
-set(handles.edit_Xstartframe,'String',num2str(ii));
+set(handles.edit_XcenterZoom,'String',num2str(ii));
+Xcenter = str2double(get(handles.edit_XcenterZoom,'String'));
+XwidthZoom = str2double(get(handles.edit_XwidthZoom,'String'));
+Data.ZoomXrange = [max((Xcenter-XwidthZoom/2),1) min((Xcenter+XwidthZoom/2),size(Data.angio,2))];
 draw(hObject, eventdata, handles);
 
 % --- Executes on button press in pushbutton_Ymoveleft.
@@ -473,9 +506,14 @@ function pushbutton_Ymoveleft_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_Ymoveleft (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+global Data
 ii = str2double(get(handles.edit_Zstartframe,'String'));
 ii = ii-1;
-set(handles.edit_Ystartframe,'String',num2str(ii));
+set(handles.edit_YcenterZoom,'String',num2str(ii));
+
+Ycenter = str2double(get(handles.edit_YcenterZoom,'String'));
+YwidthZoom = str2double(get(handles.edit_YwidthZoom,'String'));
+Data.ZoomYrange = [max((Ycenter-YwidthZoom/2),1) min((Ycenter+YwidthZoom/2),size(Data.angio,2))];
 draw(hObject, eventdata, handles);
 
 
@@ -496,9 +534,13 @@ function pushbutton_Xmoveright_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_Xmoveright (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-ii = str2double(get(handles.edit_Xstartframe,'String'));
+global Data
+ii = str2double(get(handles.edit_XcenterZoom,'String'));
 ii = ii+1;
-set(handles.edit_Xstartframe,'String',num2str(ii));
+set(handles.edit_XcenterZoom,'String',num2str(ii));
+Xcenter = str2double(get(handles.edit_XcenterZoom,'String'));
+XwidthZoom = str2double(get(handles.edit_XwidthZoom,'String'));
+Data.ZoomXrange = [max((Xcenter-XwidthZoom/2),1) min((Xcenter+XwidthZoom/2),size(Data.angio,2))];
 draw(hObject, eventdata, handles);
 
 % --- Executes on button press in pushbutton_Ymoveright.
@@ -506,9 +548,14 @@ function pushbutton_Ymoveright_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_Ymoveright (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-ii = str2double(get(handles.edit_Ystartframe,'String'));
+global Data
+ii = str2double(get(handles.edit_YcenterZoom,'String'));
 ii = ii+1;
-set(handles.edit_Ystartframe,'String',num2str(ii));
+set(handles.edit_YcenterZoom,'String',num2str(ii));
+
+Ycenter = str2double(get(handles.edit_YcenterZoom,'String'));
+YwidthZoom = str2double(get(handles.edit_YwidthZoom,'String'));
+Data.ZoomYrange = [max((Ycenter-YwidthZoom/2),1) min((Ycenter+YwidthZoom/2),size(Data.angio,2))];
 draw(hObject, eventdata, handles);
 
 
@@ -874,3 +921,82 @@ if isfield(Data,'segangio')
     
 end
 
+
+
+% --- Executes on button press in pushbutton_Zoomin.
+function pushbutton_Zoomin_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_Zoomin (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global Data
+% axes(handles.axes1)
+k = waitforbuttonpress;
+if k==0
+    point1 = get(handles.axes1,'CurrentPoint');     % button down detected
+    finalRect = rbbox;                              % return figure units
+    point2 = get(handles.axes1,'CurrentPoint');     % button up detected
+    point1 = round(point1(1,1:2));                          % extract x and y
+    point2 = round(point2(1,1:2));
+  
+%     if isfield(cna,'ROIs')
+%         cna.ROIs(end+1,:,:,:) = [point1; point2; [zrange(1) zrange(end)]];
+%     else
+%         cna.ROIs(1,:,:,:) = [point1; point2;[zrange(1) zrange(end)]];
+%     end
+%     draw(hObject, eventdata, handles);
+Data.ZoomYrange = [point1(2) point2(2)];
+Data.ZoomXrange = [point1(1) point2(1)];
+set(handles.edit_XcenterZoom,'String',num2str(mean([point1(1) point2(1)-1])));
+set(handles.edit_YcenterZoom,'String',num2str(mean([point1(2) point2(2)-1])));
+set(handles.edit_XwidthZoom,'String',num2str(point2(1)-point1(1)+1));
+set(handles.edit_YwidthZoom,'String',num2str(point2(2)-point1(2)+1));
+end
+% rect_pos = rbbox;
+draw(hObject, eventdata, handles);
+
+
+
+% --- Executes on button press in pushbutton_ZoomOut.
+function pushbutton_ZoomOut_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_ZoomOut (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global Data
+Data.ZoomYrange = [1 size(Data.angio,3)]
+Data.ZoomXrange = [1 size(Data.angio,2)]
+set(handles.edit_XcenterZoom,'String',num2str(mean([1 size(Data.angio,2)-1])))
+set(handles.edit_YcenterZoom,'String',num2str(mean([1 size(Data.angio,3)-1])))
+set(handles.edit_XwidthZoom,'String',num2str(size(Data.angio,2)));
+set(handles.edit_YwidthZoom,'String',num2str(size(Data.angio,2)));
+draw(hObject, eventdata, handles);
+
+
+% --- Executes on button press in pushbutton_displayMesh.
+function pushbutton_displayMesh_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_displayMesh (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global Data
+h = waitbar(0,'Please wait... calculating the mesh');
+if isfield(Data,'segangio')
+    Mask = Data.segangio;
+    fv = isosurface(Mask);
+    fv2 = reducepatch(fv,50000); 
+    f = fv2.faces;
+    v = fv2.vertices;
+    figure(2);
+    clf
+
+    h=trisurf(f,v(:,1),v(:,2),v(:,3),'facecolor','red','edgecolor','none');
+    daspect([1,1,1])
+    view(3); axis tight
+    camlight
+    lighting gouraud
+    xlabel('Y')
+    ylabel('Z')
+    zlabel('X')
+end
+waitbar(1);
+close(h);
