@@ -22,7 +22,7 @@ function varargout = vesSegment(varargin)
 
 % Edit the above text to modify the response to help vesSegment
 
-% Last Modified by GUIDE v2.5 27-Jul-2017 13:43:41
+% Last Modified by GUIDE v2.5 28-Jul-2017 16:21:27
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -123,7 +123,7 @@ if strcmp(ext,'.mat')
             Data.rawdatapath = Output.rawdatapath;
         end
         if isfield(Output,'procSteps')
-            Data.segangio = Output.procSteps;
+            Data.procSteps = Output.procSteps;
         end
         if isfield(Output,'angioF')
             Data.angioF = Output.angioF;
@@ -133,6 +133,9 @@ if strcmp(ext,'.mat')
         end
         if isfield(Output,'segangio')
             Data.segangio = Output.segangio;
+        end
+        if isfield(Output,'fv')
+            Data.fv = Output.fv;
         end
     else
         temp = load([pathname filename]);
@@ -230,7 +233,7 @@ if isfield(Data,'angioT') && (get(handles.checkbox_showSeg,'Value') == 1)
 else
     colorbar;
 end
-% axis image
+axis image
 axis on
 if isfield(Data,'ZoomXrange') && isfield(Data,'ZoomYrange')
     xlim(Data.ZoomXrange);
@@ -243,7 +246,7 @@ elseif get(handles.checkbox_showSeg,'Value') == 1 && isfield(Data,'angioT')
     imagesc(green);
 %     colormap(C);
 %     colorbar; 
-%     axis image; 
+    axis image; 
     axis on
     if isfield(Data,'ZoomXrange') && isfield(Data,'ZoomYrange')
         xlim(Data.ZoomXrange);
@@ -494,7 +497,9 @@ function pushbutton_Xmoveleft_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 global Data
 ii = str2double(get(handles.edit_XcenterZoom,'String'));
-ii = ii-1;
+XwidthZoom = str2double(get(handles.edit_XwidthZoom,'String'));
+ii = ii-round(XwidthZoom*.10);
+ii = min(max(ii,round(XwidthZoom/2)),size(Data.angio,2)-round(XwidthZoom/2));
 set(handles.edit_XcenterZoom,'String',num2str(ii));
 Xcenter = str2double(get(handles.edit_XcenterZoom,'String'));
 XwidthZoom = str2double(get(handles.edit_XwidthZoom,'String'));
@@ -507,12 +512,12 @@ function pushbutton_Ymoveleft_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global Data
-ii = str2double(get(handles.edit_Zstartframe,'String'));
-ii = ii-1;
-set(handles.edit_YcenterZoom,'String',num2str(ii));
-
-Ycenter = str2double(get(handles.edit_YcenterZoom,'String'));
+ii = str2double(get(handles.edit_YcenterZoom,'String'));
 YwidthZoom = str2double(get(handles.edit_YwidthZoom,'String'));
+ii = ii-round(YwidthZoom*.10);
+ii = min(max(ii,round(YwidthZoom/2)),size(Data.angio,3)-round(YwidthZoom/2));
+set(handles.edit_YcenterZoom,'String',num2str(ii));
+Ycenter = str2double(get(handles.edit_YcenterZoom,'String'));
 Data.ZoomYrange = [max((Ycenter-YwidthZoom/2),1) min((Ycenter+YwidthZoom/2),size(Data.angio,2))];
 draw(hObject, eventdata, handles);
 
@@ -536,7 +541,9 @@ function pushbutton_Xmoveright_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 global Data
 ii = str2double(get(handles.edit_XcenterZoom,'String'));
-ii = ii+1;
+XwidthZoom = str2double(get(handles.edit_XwidthZoom,'String'));
+ii = ii+round(XwidthZoom*.10);
+ii = min(max(ii,round(XwidthZoom/2)),size(Data.angio,2)-round(XwidthZoom/2));
 set(handles.edit_XcenterZoom,'String',num2str(ii));
 Xcenter = str2double(get(handles.edit_XcenterZoom,'String'));
 XwidthZoom = str2double(get(handles.edit_XwidthZoom,'String'));
@@ -550,11 +557,11 @@ function pushbutton_Ymoveright_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 global Data
 ii = str2double(get(handles.edit_YcenterZoom,'String'));
-ii = ii+1;
-set(handles.edit_YcenterZoom,'String',num2str(ii));
-
-Ycenter = str2double(get(handles.edit_YcenterZoom,'String'));
 YwidthZoom = str2double(get(handles.edit_YwidthZoom,'String'));
+ii = ii+round(YwidthZoom*.10);
+ii = min(max(ii,round(YwidthZoom/2)),size(Data.angio,3)-round(YwidthZoom/2));
+set(handles.edit_YcenterZoom,'String',num2str(ii));
+Ycenter = str2double(get(handles.edit_YcenterZoom,'String'));
 Data.ZoomYrange = [max((Ycenter-YwidthZoom/2),1) min((Ycenter+YwidthZoom/2),size(Data.angio,2))];
 draw(hObject, eventdata, handles);
 
@@ -820,7 +827,7 @@ if isfield(Data,'angioF')|| isfield(Data,'angioT') || isfield(Data,'segangio')
         Output.rawdatapath = Data.rawdatapath;
     end
     if isfield(Data,'procSteps')
-        Output.rawdatapath = Data.procSteps;
+        Output.procSteps = Data.procSteps;
     end
     if isfield(Data,'angioF')
         Output.angioF = Data.angioF;
@@ -830,6 +837,9 @@ if isfield(Data,'angioF')|| isfield(Data,'angioT') || isfield(Data,'segangio')
     end
     if isfield(Data,'segangio')
         Output.segangio = Data.segangio;
+    end
+    if isfield(Data,'fv')
+        Output.fv = Data.fv;
     end
     [FileName,PathName] = uiputfile('*.mat');
     save([PathName FileName],'Output');
@@ -930,7 +940,8 @@ function pushbutton_Zoomin_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 global Data
-% axes(handles.axes1)
+axes(handles.axes1)
+title('\fontsize{16}\color{red}ZOOM IN');
 k = waitforbuttonpress;
 if k==0
     point1 = get(handles.axes1,'CurrentPoint');     % button down detected
@@ -963,8 +974,8 @@ function pushbutton_ZoomOut_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global Data
-Data.ZoomYrange = [1 size(Data.angio,3)]
-Data.ZoomXrange = [1 size(Data.angio,2)]
+Data.ZoomYrange = [1 size(Data.angio,3)];
+Data.ZoomXrange = [1 size(Data.angio,2)];
 set(handles.edit_XcenterZoom,'String',num2str(mean([1 size(Data.angio,2)-1])))
 set(handles.edit_YcenterZoom,'String',num2str(mean([1 size(Data.angio,3)-1])))
 set(handles.edit_XwidthZoom,'String',num2str(size(Data.angio,2)));
@@ -979,11 +990,17 @@ function pushbutton_displayMesh_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 global Data
-h = waitbar(0,'Please wait... calculating the mesh');
+wait_h = waitbar(0,'Please wait... calculating the mesh');
 if isfield(Data,'segangio')
     Mask = Data.segangio;
-    fv = isosurface(Mask);
-    fv2 = reducepatch(fv,50000); 
+    if isfield(Data,'fv')
+        fv2 = Data.fv;
+    else
+        fv = isosurface(Mask);
+        fv2 = reducepatch(fv,200000); 
+    end
+    
+%     fv2 = fv;
     f = fv2.faces;
     v = fv2.vertices;
     figure(2);
@@ -997,6 +1014,7 @@ if isfield(Data,'segangio')
     xlabel('Y')
     ylabel('Z')
     zlabel('X')
+    Data.fv = fv2;
 end
 waitbar(1);
-close(h);
+close(wait_h);
