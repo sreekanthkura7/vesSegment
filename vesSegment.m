@@ -22,7 +22,7 @@ function varargout = vesSegment(varargin)
 
 % Edit the above text to modify the response to help vesSegment
 
-% Last Modified by GUIDE v2.5 28-Jul-2017 16:21:27
+% Last Modified by GUIDE v2.5 31-Jul-2017 22:11:32
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -169,6 +169,11 @@ set(handles.edit_XcenterZoom,'String',num2str(mean([1 size(Data.angio,2)-1])))
 set(handles.edit_YcenterZoom,'String',num2str(mean([1 size(Data.angio,3)-1])))
 set(handles.edit_XwidthZoom,'String',num2str(size(Data.angio,2)));
 set(handles.edit_YwidthZoom,'String',num2str(size(Data.angio,2)));
+
+% set(handles.edit_imageInfo,'String','Image info');
+% set(handles.edit_imageInfo,'String',[num2str(x) 'X' num2str(y) 'X' num2str(z)]);
+str = sprintf('%s\n%s','Image info',[num2str(x) 'X' num2str(y) 'X' num2str(z)]);
+set(handles.edit_imageInfo,'String',str);
 waitbar(1);
 close(h);
 
@@ -231,7 +236,9 @@ if isfield(Data,'angioT') && (get(handles.checkbox_showSeg,'Value') == 1)
     hold off
     set(h, 'AlphaData', img*0.25)
 else
-    colorbar;
+    if get(handles.checkbox_showColorbar,'Value') == 1
+        colorbar;
+    end
 end
 axis image
 axis on
@@ -1015,6 +1022,92 @@ if isfield(Data,'segangio')
     ylabel('Z')
     zlabel('X')
     Data.fv = fv2;
+end
+waitbar(1);
+close(wait_h);
+
+
+
+function edit_imageInfo_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_imageInfo (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_imageInfo as text
+%        str2double(get(hObject,'String')) returns contents of edit_imageInfo as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_imageInfo_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_imageInfo (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in checkbox_showColorbar.
+function checkbox_showColorbar_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox_showColorbar (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox_showColorbar
+
+draw(hObject, eventdata, handles);
+
+
+% --- Executes on button press in pushbutton_displayMeshVisible.
+function pushbutton_displayMeshVisible_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_displayMeshVisible (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global Data
+wait_h = waitbar(0,'Please wait... calculating the mesh');
+if isfield(Data,'segangio')
+    [Sz,Sx,Sy] = size(Data.segangio);
+    Zstartframe = str2double(get(handles.edit_Zstartframe,'String'));
+    Zstartframe = min(max(Zstartframe,1),Sz);
+    ZMIP = str2double(get(handles.edit_ZMIP,'String'));
+    Zendframe = min(max(Zstartframe+ZMIP-1,1),Sz);
+    if isfield(Data,'ZoomXrange')
+        Xstartframe = Data.ZoomXrange(1);
+        Xendframe = Data.ZoomXrange(2);
+    else
+        Xstartframe = 1;
+        Xendframe = Sx;
+    end
+     if isfield(Data,'ZoomYrange')
+        Ystartframe = Data.ZoomYrange(1);
+        Yendframe = Data.ZoomYrange(2);
+    else
+        Ystartframe = 1;
+        Yendframe = Sy;
+    end
+        Mask = Data.segangio(Zstartframe:Zendframe,Xstartframe:Xendframe,Ystartframe:Yendframe);
+        fv = isosurface(Mask);
+        fv2 = reducepatch(fv,200000); 
+    
+    
+%     fv2 = fv;
+    f = fv2.faces;
+    v = fv2.vertices;
+    figure(2);
+    clf
+
+    h=trisurf(f,v(:,1),v(:,2),v(:,3),'facecolor','red','edgecolor','none');
+    daspect([1,1,1])
+    view(3); axis tight
+    camlight
+    lighting gouraud
+    xlabel('Y')
+    ylabel('Z')
+    zlabel('X')
 end
 waitbar(1);
 close(wait_h);
