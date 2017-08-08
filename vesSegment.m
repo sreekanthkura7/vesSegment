@@ -22,7 +22,7 @@ function varargout = vesSegment(varargin)
 
 % Edit the above text to modify the response to help vesSegment
 
-% Last Modified by GUIDE v2.5 03-Aug-2017 21:35:49
+% Last Modified by GUIDE v2.5 08-Aug-2017 22:19:05
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1179,4 +1179,50 @@ function pushbuttonGraphMesh_Callback(hObject, eventdata, handles)
 load mesh.mat
 
 graphTubularMesh( f, v, Mask, offset );
+
+
+% --- Executes on button press in pushbuttonCenterXYZ.
+function pushbuttonCenterXYZ_Callback(hObject, eventdata, handles)
+global Data
+
+nodesNew = centerNodesXYZ( Data.Graph.nodes, Data.Graph.edges, permute(Data.segangio,[2 3 1]) ); % permute to x,y,z
+
+Data.Graph.nodes = nodesNew;
+
+draw(hObject, eventdata, handles)
+
+
+% --- Executes on button press in pushbuttonCenterXY.
+function pushbuttonCenterXY_Callback(hObject, eventdata, handles)
+global Data
+
+nodesNew = centerNodes( Data.Graph.nodes, Data.Graph.edges, permute(Data.segangio,[2 3 1]) ); % permute to x,y,z
+
+Data.Graph.nodes = nodesNew;
+
+draw(hObject, eventdata, handles)
+
+
+% --- Executes on button press in pushbuttonRegraphNodes.
+function pushbuttonRegraphNodes_Callback(hObject, eventdata, handles)
+global Data
+
+[nodes, edges] = regraphNodes( Data.Graph.nodes, Data.Graph.edges);
+[nodes, edges] = fillNodes( nodes, edges);
+
+Data.Graph.nodes = nodes;
+Data.Graph.edges = edges;
+
+draw(hObject, eventdata, handles)
+
+
+% --- Executes on button press in pushbuttonStraightenNodes.
+function pushbuttonStraightenNodes_Callback(hObject, eventdata, handles)
+global Data
+
+nodesNew = straightenNodes( Data.Graph.nodes, Data.Graph.edges, permute(Data.segangio,[2 3 1]), 0.5 ); % permute to x,y,z
+
+Data.Graph.nodes = nodesNew;
+
+draw(hObject, eventdata, handles)
 
