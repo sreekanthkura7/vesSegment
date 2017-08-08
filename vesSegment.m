@@ -22,7 +22,7 @@ function varargout = vesSegment(varargin)
 
 % Edit the above text to modify the response to help vesSegment
 
-% Last Modified by GUIDE v2.5 31-Jul-2017 22:11:32
+% Last Modified by GUIDE v2.5 03-Aug-2017 21:35:49
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -260,6 +260,24 @@ elseif get(handles.checkbox_showSeg,'Value') == 1 && isfield(Data,'angioT')
         ylim(Data.ZoomYrange);
     end
 %     set(h, 'AlphaData', img*0.25)
+end
+
+% Display Graph
+if get(handles.checkboxDisplayGraph,'value')==1
+    nodes = Data.Graph.nodes;
+    edges = Data.Graph.edges;
+    lst = find(nodes(:,1)>=Data.ZoomXrange(1) & nodes(:,1)<=Data.ZoomXrange(2) & ...
+               nodes(:,2)>=Data.ZoomYrange(1) & nodes(:,2)<=Data.ZoomYrange(2) & ...
+               nodes(:,3)>=Zstartframe & nodes(:,3)<=Zendframe );
+    hold on
+    h=plot(nodes(lst,1),nodes(lst,2),'m.');
+    set(h,'markersize',12)
+    
+    for ii=1:length(lst)
+        lst2 = find(edges(:,1)==lst(ii));
+        plot(nodes(edges(lst2,:),1), nodes(edges(lst2,:),2), 'm-' );
+    end
+    hold off
 end
 
 % Display procSteps in text box
@@ -999,7 +1017,7 @@ function pushbutton_displayMesh_Callback(hObject, eventdata, handles)
 global Data
 wait_h = waitbar(0,'Please wait... calculating the mesh');
 if isfield(Data,'segangio')
-    Mask = Data.segangio;
+    Mask = permute(Data.segangio,[2 3 1]);
     if isfield(Data,'fv')
         fv2 = Data.fv;
     else
@@ -1019,10 +1037,12 @@ if isfield(Data,'segangio')
     camlight
     lighting gouraud
     xlabel('Y')
-    ylabel('Z')
-    zlabel('X')
+    ylabel('X')
+    zlabel('Z')
     Data.fv = fv2;
 end
+offset = [Xstartframe,Ystartframe,Zstartframe];
+save('mesh.mat','Mask','f','v','offset');
 waitbar(1);
 close(wait_h);
 
@@ -1089,7 +1109,7 @@ if isfield(Data,'segangio')
         Ystartframe = 1;
         Yendframe = Sy;
     end
-        Mask = Data.segangio(Zstartframe:Zendframe,Xstartframe:Xendframe,Ystartframe:Yendframe);
+        Mask = permute( Data.segangio(Zstartframe:Zendframe,Ystartframe:Yendframe,Xstartframe:Xendframe), [2 3 1]);
         fv = isosurface(Mask);
         fv2 = reducepatch(fv,200000); 
     
@@ -1105,9 +1125,58 @@ if isfield(Data,'segangio')
     view(3); axis tight
     camlight
     lighting gouraud
-    xlabel('Y')
-    ylabel('Z')
-    zlabel('X')
+    xlabel('X')
+    ylabel('Y')
+    zlabel('Z')
 end
+offset = [Xstartframe,Ystartframe,Zstartframe];
+save('mesh.mat','Mask','f','v','offset');
 waitbar(1);
 close(wait_h);
+
+
+% --- Executes on button press in pushbuttonLoadGraph.
+function pushbuttonLoadGraph_Callback(hObject, eventdata, handles)
+
+global Data
+
+[filename,pathname] = uigetfile({'*.mat'},'Please select the Graph Data to Load');
+if filename==0
+    return
+end
+
+load([pathname filename]);
+if ~exist('seg')
+    msgbox('Selected File does not have Graph information');
+    return
+end
+
+%Data.Graph.seg = seg;
+if isfield(Data,'Graph')
+    nNodes = size(Data.Graph.nodes,1);
+    nNewNodes = size(nodes,1);
+    Data.Graph.nodes(nNodes+[1:nNewNodes],1:3) = nodes;
+
+    nEdges = size(Data.Graph.edges,1);
+    nNewEdges = size(edges,1);
+    Data.Graph.edges(nEdges+[1:nNewEdges],1:2) = edges + nNodes;
+else
+    Data.Graph.nodes = nodes;
+    Data.Graph.edges = edges;
+end
+
+set(handles.checkboxDisplayGraph,'enable','on')
+
+
+% --- Executes on button press in checkboxDisplayGraph.
+function checkboxDisplayGraph_Callback(hObject, eventdata, handles)
+draw(hObject, eventdata, handles)
+
+
+% --- Executes on button press in pushbuttonGraphMesh.
+function pushbuttonGraphMesh_Callback(hObject, eventdata, handles)
+
+load mesh.mat
+
+graphTubularMesh( f, v, Mask, offset );
+
