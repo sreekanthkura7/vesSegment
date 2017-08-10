@@ -22,7 +22,10 @@ function varargout = vesSegment(varargin)
 
 % Edit the above text to modify the response to help vesSegment
 
-% Last Modified by GUIDE v2.5 10-Aug-2017 11:18:36
+
+
+% Last Modified by GUIDE v2.5 10-Aug-2017 14:57:48
+
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -58,9 +61,12 @@ handles.output = hObject;
 % Update handles structure
 guidata(hObject, handles);
 
-% UIWAIT makes vesSegment wait for user response (see UIRESUME)
-% uiwait(handles.figure1);
-
+global Data
+if exist('Data')
+    if isfield(Data,'Graph')
+        Data = rmfield(Data,'Graph');
+    end
+end
 
 % --- Outputs from this function are returned to the command line.
 function varargout = vesSegment_OutputFcn(hObject, eventdata, handles) 
@@ -1088,6 +1094,7 @@ function pushbutton_displayMeshVisible_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 global Data
+
 wait_h = waitbar(0,'Please wait... calculating the mesh');
 if isfield(Data,'segangio')
     [Sz,Sx,Sy] = size(Data.segangio);
@@ -1120,17 +1127,20 @@ if isfield(Data,'segangio')
     figure(2);
     clf
 
-    h=trisurf(f,v(:,1),v(:,2),v(:,3),'facecolor','red','edgecolor','none');
-    daspect([1,1,1])
-    view(3); axis tight
-    camlight
-    lighting gouraud
-    xlabel('X')
-    ylabel('Y')
-    zlabel('Z')
+    if eventdata~=1
+        h=trisurf(f,v(:,1),v(:,2),v(:,3),'facecolor','red','edgecolor','none');
+        daspect([1,1,1])
+        view(3); axis tight
+        camlight
+        lighting gouraud
+        xlabel('X')
+        ylabel('Y')
+        zlabel('Z')
+    end
+    
+    offset = [Xstartframe,Ystartframe,Zstartframe];
+    save('mesh.mat','Mask','f','v','offset');
 end
-offset = [Xstartframe,Ystartframe,Zstartframe];
-save('mesh.mat','Mask','f','v','offset');
 waitbar(1);
 close(wait_h);
 
@@ -1166,6 +1176,7 @@ else
 end
 
 set(handles.checkboxDisplayGraph,'enable','on')
+draw(hObject, eventdata, handles)
 
 
 % --- Executes on button press in checkboxDisplayGraph.
@@ -1228,6 +1239,7 @@ draw(hObject, eventdata, handles)
 
 
 
+
 % --------------------------------------------------------------------
 function Filter_expTransformation_Callback(hObject, eventdata, handles)
 % hObject    handle to Filter_expTransformation (see GCBO)
@@ -1260,5 +1272,70 @@ close(h);
 draw(hObject, eventdata, handles);
 
 
+
+
+% --- Executes on button press in pushbuttonMeshGraphTiles.
+function pushbuttonMeshGraphTiles_Callback(hObject, eventdata, handles)
+global Data
+
+[Sz,Sx,Sy] = size(Data.segangio);
+
+xRange = str2num(get(handles.editGraphXrange,'string'));
+yRange = str2num(get(handles.editGraphYrange,'string'));
+zRange = str2num(get(handles.editGraphZrange,'string'));
+
+set(handles.edit_ZMIP,'String',num2str(zRange(4)));
+iiZ=0;
+for iZ=zRange(1):zRange(2):zRange(3)
+    iiZ = iiZ + 1;
+    set(handles.edit_Zstartframe,'String',num2str(iZ))
+    draw(hObject, eventdata, handles);
+    pushbutton_displayMeshVisible_Callback(hObject, 0, handles);
+    drawnow
+    
+    load mesh.mat
+    
+    filenm = sprintf('graph%02d.mat',iiZ);
+    graphTubularMesh( f, v, Mask, offset, filenm );
+
+    load(filenm);
+    if isfield(Data,'Graph')
+        nNodes = size(Data.Graph.nodes,1);
+        nNewNodes = size(nodes,1);
+        Data.Graph.nodes(nNodes+[1:nNewNodes],1:3) = nodes;
+        
+        nEdges = size(Data.Graph.edges,1);
+        nNewEdges = size(edges,1);
+        Data.Graph.edges(nEdges+[1:nNewEdges],1:2) = edges + nNodes;
+    else
+        Data.Graph.nodes = nodes;
+        Data.Graph.edges = edges;
+    end
+        
+end
+
+set(handles.checkboxDisplayGraph,'enable','on')
+draw(hObject, eventdata, handles)
+
+
+% --- Executes on button press in pushbuttonGraphClear.
+function pushbuttonGraphClear_Callback(hObject, eventdata, handles)
+global Data
+if exist('Data')
+    if isfield(Data,'Graph')
+        Data = rmfield(Data,'Graph');
+    end
+end
+draw(hObject, eventdata, handles)
+
+
+
+function editGraphXrange_Callback(hObject, eventdata, handles)
+
+
+function editGraphYrange_Callback(hObject, eventdata, handles)
+
+
+function editGraphZrange_Callback(hObject, eventdata, handles)
 
 
