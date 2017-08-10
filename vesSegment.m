@@ -22,7 +22,7 @@ function varargout = vesSegment(varargin)
 
 % Edit the above text to modify the response to help vesSegment
 
-% Last Modified by GUIDE v2.5 08-Aug-2017 22:19:05
+% Last Modified by GUIDE v2.5 10-Aug-2017 11:18:36
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1225,4 +1225,40 @@ nodesNew = straightenNodes( Data.Graph.nodes, Data.Graph.edges, permute(Data.seg
 Data.Graph.nodes = nodesNew;
 
 draw(hObject, eventdata, handles)
+
+
+
+% --------------------------------------------------------------------
+function Filter_expTransformation_Callback(hObject, eventdata, handles)
+% hObject    handle to Filter_expTransformation (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global Data
+
+prompt = {'Enter transformation constant :'};
+defaultans = {'4'};
+Tc = str2double(inputdlg(prompt,'Transformation Constant',1,defaultans ));
+
+if isfield(Data,'angioF')
+    I = double(Data.angioF);
+else
+    I = double(Data.angio);
+end
+
+h = waitbar(0,'Please wait... applying Exponential Transform');
+
+Data.angioF = 1-exp(-Tc*I/max(I(:)));
+
+if isfield(Data,'procSteps')
+    Data.procSteps(end+1,:) =  {{'Exponential Tranformation'},{'Transformation constant'},{Tc}};
+else
+    Data.procSteps =  {{'Exponential Tranformation'},{'Transformation constant'},{Tc}};
+end
+waitbar(1);
+close(h);
+draw(hObject, eventdata, handles);
+
+
+
 
