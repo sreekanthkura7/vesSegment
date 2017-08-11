@@ -233,7 +233,7 @@ axes(handles.axes1)
 if (get(handles.checkbox_showFiltData,'Value') == 1) || (get(handles.checkbox_showRawData,'Value') == 1)
 colormap('gray')
 imagesc(Zimg)
-if isfield(Data,'angioT') && (get(handles.checkbox_showSeg,'Value') == 1)
+if isfield(Data,'segangio') && (get(handles.checkbox_showSeg,'Value') == 1)
     hold on
     img = double(ZimgS);
     green = cat(3, zeros(size(img)),ones(size(img)), zeros(size(img)));
@@ -252,7 +252,7 @@ if isfield(Data,'ZoomXrange') && isfield(Data,'ZoomYrange')
     xlim(Data.ZoomXrange);
     ylim(Data.ZoomYrange);
 end
-elseif get(handles.checkbox_showSeg,'Value') == 1 && isfield(Data,'angioT')
+elseif get(handles.checkbox_showSeg,'Value') == 1 && isfield(Data,'segangio')
 %     C = [0 0 0; 0 0.25 0; 0 0.5 0; 0 1 0];
     img = double(ZimgS);
     green = cat(3, zeros(size(img)),img*0.25, zeros(size(img)));
@@ -686,14 +686,17 @@ alpha = 0.25;
 gamma12 = 0.5;
 gamma23 = 0.5;
 T = zeros(k,l,m);
-sigma = [3];
+prompt = {'Enter Gaussian filter start value :','Enter Gaussian filter end value :','Enter Gaussian filter step size :'};
+defaultans = {'2','3','1'};
+x = inputdlg(prompt,'Tubeness filter parameters',1,defaultans );
+sigma = str2double(x{1}):str2double(x{3}):str2double(x{2});
 for i = 1:length(sigma)
     
     waitbar(i-1/length(sigma));
     [Dxx, Dyy, Dzz, Dxy, Dxz, Dyz] = Hessian3D(I,sigma(i));
     
 %     Normalizing the Hessian Matrix
-%     Dxx = i^2*Dxx; Dyy = i^2*Dyy;  Dzz = i^2*Dzz; Dxy = i^2*Dxy;  Dxz = i^2*Dxz; Dyz = i^2*Dyz;
+    Dxx = sigma(i)^2*Dxx; Dyy = sigma(i)^2*Dyy;  Dzz = sigma(i)^2*Dzz; Dxy = sigma(i)^2*Dxy;  Dxz = sigma(i)^2*Dxz; Dyz = sigma(i)^2*Dyz;
     
     
     
@@ -724,7 +727,9 @@ for i = 1:length(sigma)
     %         Vs1(Lambda2>0 | Lambda3>0) = 0;
     %         Vs1(abs(Lambda1) > abs(Lambda2)) = 0;
     %         Vs = max(Vs,Vs1);
-    [Dxx, Dyy, Dzz, Dxy, Dxz, Dyz] = Hessian3D(T,sigma);
+    [Dxx, Dyy, Dzz, Dxy, Dxz, Dyz] = Hessian3D(T,sigma(i));
+    % Normalizing the Hessian Matrix
+     Dxx = sigma(i)^2*Dxx; Dyy = sigma(i)^2*Dyy;  Dzz = sigma(i)^2*Dzz; Dxy = sigma(i)^2*Dxy;  Dxz = sigma(i)^2*Dxz; Dyz = sigma(i)^2*Dyz;
     
     [Lambda1,Lambda2,Lambda3,V1,V2,V3] = eig3volume(Dxx,Dxy,Dxz,Dyy,Dyz,Dzz);
     
@@ -733,11 +738,16 @@ for i = 1:length(sigma)
     Lambda2 = reshape(SortL(2,:),size(Lambda2));
     Lambda3 = reshape(SortL(3,:),size(Lambda3));
     
-    E = -sigma^2.*Lambda2;
+    E = -sigma(i)^2.*Lambda2;
     E(E<0) = 0;
+    if i == 1
+        Emax = E;
+    else
+        Emax = max(E,Emax);
+    end
 end
 %     T = L;
-T = E;
+T = Emax;
 
 T = (T-min(T(:)))/(max(T(:))-min(T(:)));
 Data.angioT = T;
@@ -899,7 +909,7 @@ global Data
 % Check if angioT exists before segmentation
 if isfield(Data,'angioT')
     prompt = {'Please enter threshold value for segmentation'};
-    defaultans = {'0.075'};
+    defaultans = {'0.05'};
     x = inputdlg(prompt,'Segmenatation',1,defaultans);
     threshold = str2double(x{1});
     T = Data.angioT;
