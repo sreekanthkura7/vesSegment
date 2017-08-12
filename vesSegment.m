@@ -62,7 +62,7 @@ handles.output = hObject;
 guidata(hObject, handles);
 
 global Data
-if exist('Data')
+if exist('Data','var')
     if isfield(Data,'Graph')
         Data = rmfield(Data,'Graph');
     end
@@ -93,7 +93,15 @@ function File_loaddata_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 global Data
-% clear all
+
+% clear Data strutre
+if exist('Data','var')
+    if isstruct(Data)
+        names = fieldnames(Data);
+        Data = rmfield(Data,names); 
+    end
+end
+
 [filename,pathname] = uigetfile({'*.mat;*.tiff;*.tif'},'Please select the Angiogram Data');
 h = waitbar(0,'Please wait... loading the data');
 [~,~,ext] = fileparts(filename);
@@ -180,6 +188,8 @@ set(handles.edit_YwidthZoom,'String',num2str(size(Data.angio,2)));
 % set(handles.edit_imageInfo,'String',[num2str(x) 'X' num2str(y) 'X' num2str(z)]);
 str = sprintf('%s\n%s','Image info',[num2str(x) 'X' num2str(y) 'X' num2str(z)]);
 set(handles.edit_imageInfo,'String',str);
+Data.ZoomXrange = [1 size(Data,2)];
+Data.ZoomXrange = [1 size(Data,3)];
 waitbar(1);
 close(h);
 
@@ -692,7 +702,7 @@ x = inputdlg(prompt,'Tubeness filter parameters',1,defaultans );
 sigma = str2double(x{1}):str2double(x{3}):str2double(x{2});
 for i = 1:length(sigma)
     
-    waitbar(i-1/length(sigma));
+    waitbar((i-1)/length(sigma));
     [Dxx, Dyy, Dzz, Dxy, Dxz, Dyz] = Hessian3D(I,sigma(i));
     
 %     Normalizing the Hessian Matrix
@@ -1057,7 +1067,7 @@ if isfield(Data,'segangio')
     zlabel('Z')
     Data.fv = fv2;
 end
-offset = [Xstartframe,Ystartframe,Zstartframe];
+offset = [1,1,1];
 save('mesh.mat','Mask','f','v','offset');
 waitbar(1);
 close(wait_h);
