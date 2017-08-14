@@ -188,8 +188,8 @@ set(handles.edit_YwidthZoom,'String',num2str(size(Data.angio,2)));
 % set(handles.edit_imageInfo,'String',[num2str(x) 'X' num2str(y) 'X' num2str(z)]);
 str = sprintf('%s\n%s','Image info',[num2str(x) 'X' num2str(y) 'X' num2str(z)]);
 set(handles.edit_imageInfo,'String',str);
-Data.ZoomXrange = [1 size(Data,2)];
-Data.ZoomXrange = [1 size(Data,3)];
+Data.ZoomXrange = [1 size(Data.angio,2)];
+Data.ZoomYrange = [1 size(Data.angio,3)];
 waitbar(1);
 close(h);
 
@@ -871,7 +871,7 @@ function File_savedata_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-h = waitbar(0,'Please wait... saving the data');
+
 global Data
 if isfield(Data,'angioF')|| isfield(Data,'angioT') || isfield(Data,'segangio')
     if isfield(Data,'rawdatapath')
@@ -893,10 +893,12 @@ if isfield(Data,'angioF')|| isfield(Data,'angioT') || isfield(Data,'segangio')
         Output.fv = Data.fv;
     end
     [FileName,PathName] = uiputfile('*.mat');
+    h = waitbar(0,'Please wait... saving the data');
     save([PathName FileName],'Output');
+    waitbar(1);
+    close(h);
 end
-waitbar(1);
-close(h);
+
     
 
 
@@ -914,7 +916,7 @@ function segmentation_thresholding_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-h = waitbar(0,'Please wait... saving the data');
+
 global Data
 % Check if angioT exists before segmentation
 if isfield(Data,'angioT')
@@ -922,6 +924,7 @@ if isfield(Data,'angioT')
     defaultans = {'0.05'};
     x = inputdlg(prompt,'Segmenatation',1,defaultans);
     threshold = str2double(x{1});
+    h = waitbar(0,'Please wait... saving the data');
     T = Data.angioT;
     T_seg = zeros(size(T));
     idx = find(T > threshold);
@@ -939,9 +942,10 @@ if isfield(Data,'angioT')
     else
         Data.procSteps =  {{'Thresholding on tubeness filter'},{'Threshold value'},{threshold}};
     end
+    waitbar(1);
+    close(h);
 end
-waitbar(1);
-close(h);
+
 draw(hObject, eventdata, handles);
 
 
