@@ -1008,7 +1008,7 @@ else
 end
 
 [seg_vol, seg_prob, fg_seed_vol, bg_seed_vol] = segment_vessels_random_walker(input, options);
-Data.segangio2 = seg_vol;
+Data.segangio = seg_vol;
 if isfield(Data,'procSteps')
     Data.procSteps(end+1,:) =  {{'Seed-based segmentation'},{'Options'},{options}};
 else
