@@ -59,8 +59,6 @@ function [seg_vol, seg_prob, fg_seed_vol, bg_seed_vol] = ...
 % - guess the expected proportion of FG and BG seeds from
 %   known vessel density and pixel size
 
-    debug = 0;
-
     tic
 
     % argument handling
@@ -151,6 +149,15 @@ function [seg_vol, seg_prob, fg_seed_vol, bg_seed_vol] = ...
     if isempty(bg_seed_vol)
         bg_seed_vol = find_seeds_by_threshold(...
             vol, bg_percentage, 0, bg_win, [], verbose);
+
+        % disallow bg seeds guessed on top of fg seeds
+        bg_seed_vol(find(fg_seed_vol & bg_seed_vol)) = 0;
+    end
+
+    % check for duplicate seeds
+    if find(fg_seed_vol & bg_seed_vol)
+        error('duplicate seeds detected')
+        return
     end
 
     fg_seed_vol(find(mask == 0)) = 0;
@@ -165,8 +172,7 @@ function [seg_vol, seg_prob, fg_seed_vol, bg_seed_vol] = ...
         if verbose
             fprintf('%d/%d\n', region_ind, num_regions);
         end
-        regions{region_ind} = segment_region(regions{region_ind}, ...
-                                             verbose, debug);
+        regions{region_ind} = segment_region(regions{region_ind}, verbose)
     end
 
     % recombine the regions into a single volume
@@ -188,10 +194,6 @@ function [seg_vol, seg_prob, fg_seed_vol, bg_seed_vol] = ...
                          region.s1:region.s2), region.seg_prob);
     end
 
-    if debug
-        show_vol_seg(vol, seg_vol);
-    end
-
     % if we only did part of the volume, put that part in the right place
     if ~whole_vol
         ret_seg_vol(bounds(1,1):bounds(1,2),...
@@ -208,7 +210,7 @@ function [seg_vol, seg_prob, fg_seed_vol, bg_seed_vol] = ...
     toc
 end
 
-function region = segment_region(region, verbose, debug)
+function region = segment_region(region, verbose)
 
     if sum(region.vol(:) ~= 0) < 0.1 * prod(size(region.vol))
 
@@ -257,9 +259,4 @@ function region = segment_region(region, verbose, debug)
     region.seg_region = seg_region;
     region.seg_prob = seg_prob;
 
-    if debug
-        h = show_vol_seg(region.vol, region.seg_region);
-        pause;
-        close all;
-    end
 end
