@@ -55,8 +55,8 @@ if(sum(seeds<1) || sum(seeds>prod(size(img))) || (sum(isnan(seeds))))
 end
 if(sum(diff(sort(seeds))==0)) %Check for duplicate seeds
     ss = sort(seeds);
-    [a, b, c] = ind2sub(size(img), ss(find(diff(sort(seeds))==0)))
-    keyboard
+    %[a, b, c] = ind2sub(size(img), ss(find(diff(sort(seeds))==0)));
+    %keyboard
     disp('ERROR: Duplicate seeds detected.')
     disp('Include only one entry per seed in the "seeds" and "labels" inputs.')
     exitFlag=1;

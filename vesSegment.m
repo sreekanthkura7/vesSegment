@@ -69,7 +69,7 @@ if exist('Data','var')
 end
 
 % --- Outputs from this function are returned to the command line.
-function varargout = vesSegment_OutputFcn(hObject, eventdata, handles) 
+function varargout = vesSegment_OutputFcn(hObject, eventdata, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -98,7 +98,7 @@ global Data
 if exist('Data','var')
     if isstruct(Data)
         names = fieldnames(Data);
-        Data = rmfield(Data,names); 
+        Data = rmfield(Data,names);
     end
 end
 
@@ -271,8 +271,8 @@ elseif get(handles.checkbox_showSeg,'Value') == 1 && isfield(Data,'segangio')
     green = cat(3, zeros(size(img)),img*0.25, zeros(size(img)));
     imagesc(green);
 %     colormap(C);
-%     colorbar; 
-    axis image; 
+%     colorbar;
+    axis image;
     axis on
     if isfield(Data,'ZoomXrange') && isfield(Data,'ZoomYrange')
         xlim(Data.ZoomXrange);
@@ -291,7 +291,7 @@ if get(handles.checkboxDisplayGraph,'value')==1
     hold on
     h=plot(nodes(lst,1),nodes(lst,2),'m.');
     set(h,'markersize',12)
-    
+
     for ii=1:length(lst)
         lst2 = find(edges(:,1)==lst(ii));
         plot(nodes(edges(lst2,:),1), nodes(edges(lst2,:),2), 'm-' );
@@ -327,7 +327,7 @@ end
 %     set(h, 'AlphaData', img*0.25)
 % end
 % axis image
-% 
+%
 % axes(handles.axes3)
 % colormap('gray')
 % imagesc(Yimg)
@@ -341,7 +341,7 @@ end
 %     set(h, 'AlphaData', img*0.25)
 % end
 % axis image
-% 
+%
 % axes(handles.axes4)
 % colormap('gray')
 % imagesc(ZMIPimg)
@@ -704,28 +704,28 @@ defaultans = {'2','3','1'};
 x = inputdlg(prompt,'Tubeness filter parameters',1,defaultans );
 sigma = str2double(x{1}):str2double(x{3}):str2double(x{2});
 for i = 1:length(sigma)
-    
+
     waitbar((i-1)/length(sigma));
     [Dxx, Dyy, Dzz, Dxy, Dxz, Dyz] = Hessian3D(I,sigma(i));
-    
+
 %     Normalizing the Hessian Matrix
     Dxx = sigma(i)^2*Dxx; Dyy = sigma(i)^2*Dyy;  Dzz = sigma(i)^2*Dzz; Dxy = sigma(i)^2*Dxy;  Dxz = sigma(i)^2*Dxz; Dyz = sigma(i)^2*Dyz;
-    
-    
-    
+
+
+
     [Lambda1,Lambda2,Lambda3,~,~,~] = eig3volume(Dxx,Dxy,Dxz,Dyy,Dyz,Dzz);
 
-    
+
     SortL = sort([Lambda1(:)'; Lambda2(:)'; Lambda3(:)'],'descend');
     Lambda1 = reshape(SortL(1,:),size(Lambda1));
     Lambda2 = reshape(SortL(2,:),size(Lambda2));
     Lambda3 = reshape(SortL(3,:),size(Lambda3));
-    
+
     idx = find(Lambda3 < 0 & Lambda2 < 0 & Lambda1 < 0);
     T(idx ) = abs(Lambda3(idx)).*(Lambda2(idx)./Lambda3(idx)).^gamma23.*(1+Lambda1(idx)./abs(Lambda2(idx))).^gamma12;
     idx = find(Lambda3 < 0 & Lambda2 < 0 & Lambda1 > 0 & Lambda1 < abs(Lambda2)/alpha);
     T(idx ) = abs(Lambda3(idx)).*(Lambda2(idx)./Lambda3(idx)).^gamma23.*(1-alpha*Lambda1(idx)./abs(Lambda2(idx))).^gamma12;
-    
+
     %         L1 = (2*Lambda1-Lambda2-Lambda3)./(2*sqrt(Lambda1.^2+Lambda2.^2+Lambda3.^2-Lambda1.*Lambda2-Lambda1.*Lambda3-Lambda2.*Lambda3));
     %         L1 = exp(-alpha*(L1-1).^2);
     %         L1(abs(Lambda1)> abs(Lambda2)) = 0;
@@ -743,14 +743,14 @@ for i = 1:length(sigma)
     [Dxx, Dyy, Dzz, Dxy, Dxz, Dyz] = Hessian3D(T,sigma(i));
     % Normalizing the Hessian Matrix
      Dxx = sigma(i)^2*Dxx; Dyy = sigma(i)^2*Dyy;  Dzz = sigma(i)^2*Dzz; Dxy = sigma(i)^2*Dxy;  Dxz = sigma(i)^2*Dxz; Dyz = sigma(i)^2*Dyz;
-    
+
     [Lambda1,Lambda2,Lambda3,V1,V2,V3] = eig3volume(Dxx,Dxy,Dxz,Dyy,Dyz,Dzz);
-    
+
     SortL = sort([Lambda1(:)'; Lambda2(:)'; Lambda3(:)'],'ascend');
     Lambda1 = reshape(SortL(1,:),size(Lambda1));
     Lambda2 = reshape(SortL(2,:),size(Lambda2));
     Lambda3 = reshape(SortL(3,:),size(Lambda3));
-    
+
     E = -sigma(i)^2.*Lambda2;
     E(E<0) = 0;
     if i == 1
@@ -777,7 +777,7 @@ draw(hObject, eventdata, handles);
 % % hObject    handle to Filters_thresholding (see GCBO)
 % % eventdata  reserved - to be defined in a future version of MATLAB
 % % handles    structure with handles and user data (see GUIDATA)
-% 
+%
 % global Data
 % % Check if angioT exists before segmentation
 % if isfield(Data,'angioT')
@@ -795,7 +795,7 @@ draw(hObject, eventdata, handles);
 %          if length(CC.PixelIdxList{uuu}) < 100
 %              T_segM(CC.PixelIdxList{uuu}) = 0;
 %          end
-%     end 
+%     end
 %     Data.segangio = T_segM;
 % end
 
@@ -905,7 +905,7 @@ if isfield(Data,'angioF')|| isfield(Data,'angioT') || isfield(Data,'segangio')
     close(h);
 end
 
-    
+
 
 
 
@@ -941,7 +941,7 @@ if isfield(Data,'angioT')
          if length(CC.PixelIdxList{uuu}) < 100
              T_segM(CC.PixelIdxList{uuu}) = 0;
          end
-    end 
+    end
     Data.segangio = T_segM;
     if isfield(Data,'procSteps')
         Data.procSteps(end+1,:) =  {{'Thresholding on tubeness filter'},{'Threshold value'},{threshold}};
@@ -986,13 +986,42 @@ function segmentation_SeedBasedSegmentation_Callback(hObject, eventdata, handles
 
 global Data
 addpath(genpath([pwd '\seed_based_segmentation']));
+% Check if angioT exists before segmentation
 if isfield(Data,'segangio')
     options.fg_seed_vol = Data.segangio;
-    [seg_vol, seg_prob, fg_seed_vol, bg_seed_vol] = segment_vessels_random_walker(Data.angio, options)
-    
+    prompt = {'Background seed percentage :','Background seed window size :','Region size (voxels on a side) :'};
+    defaultans = {'50', '75', '50'};
+    x = inputdlg(prompt,'Seed-based segmentation parameters',1,defaultans );
+    options.bg_percentage = str2double(x{1});
+    options.bg_win = str2double(x{2});
+    options.region_size = str2double(x{3});
+else
+    prompt = {'Foreground seed percentage :','Foreground seed window size :','Background seed percentage :','Background seed window size :','Region size (voxels on a side) :'};
+    defaultans = {'1', '300', '50', '75', '50'};
+    x = inputdlg(prompt,'Seed-based segmentation parameters',1,defaultans );
+    options.fg_percentage = str2double(x{1});
+    options.fg_win = str2double(x{2});
+    options.bg_percentage = str2double(x{3});
+    options.bg_win = str2double(x{4});
+    options.region_size = str2double(x{5});
+end
+h = waitbar(0,'Please wait... segmenting');
+
+if isfield(Data,'angioT')
+    input = Data.angioT;
+else
+    input = Data.angio;
 end
 
-
+[seg_vol, seg_prob, fg_seed_vol, bg_seed_vol] = segment_vessels_random_walker(input, options);
+Data.segangio = seg_vol;
+if isfield(Data,'procSteps')
+    Data.procSteps(end+1,:) =  {{'Seed-based segmentation'},{'Options'},{options}};
+else
+    Data.procSteps =  {{'Seed-based segmentation'},{'Options'},{options}};
+end
+waitbar(1);
+close(h);
 
 % --- Executes on button press in pushbutton_Zoomin.
 function pushbutton_Zoomin_Callback(hObject, eventdata, handles)
@@ -1010,7 +1039,7 @@ if k==0
     point2 = get(handles.axes1,'CurrentPoint');     % button up detected
     point1 = round(point1(1,1:2));                          % extract x and y
     point2 = round(point2(1,1:2));
-  
+
 %     if isfield(cna,'ROIs')
 %         cna.ROIs(end+1,:,:,:) = [point1; point2; [zrange(1) zrange(end)]];
 %     else
@@ -1058,9 +1087,9 @@ if isfield(Data,'segangio')
         fv2 = Data.fv;
     else
         fv = isosurface(Mask);
-        fv2 = reducepatch(fv,200000); 
+        fv2 = reducepatch(fv,200000);
     end
-    
+
 %     fv2 = fv;
     f = fv2.faces;
     v = fv2.vertices;
@@ -1148,9 +1177,9 @@ if isfield(Data,'segangio')
     end
         Mask = permute( Data.segangio(Zstartframe:Zendframe,Ystartframe:Yendframe,Xstartframe:Xendframe), [2 3 1]);
         fv = isosurface(Mask);
-        fv2 = reducepatch(fv,200000); 
-    
-    
+        fv2 = reducepatch(fv,200000);
+
+
 %     fv2 = fv;
     f = fv2.faces;
     v = fv2.vertices;
@@ -1167,7 +1196,7 @@ if isfield(Data,'segangio')
         ylabel('Y')
         zlabel('Z')
     end
-    
+
     offset = [Xstartframe,Ystartframe,Zstartframe];
     save('mesh.mat','Mask','f','v','offset');
 end
@@ -1322,9 +1351,9 @@ for iZ=zRange(1):zRange(2):zRange(3)
     draw(hObject, eventdata, handles);
     pushbutton_displayMeshVisible_Callback(hObject, 0, handles);
     drawnow
-    
+
     load mesh.mat
-    
+
     filenm = sprintf('graph%02d.mat',iiZ);
     graphTubularMesh( f, v, Mask, offset, filenm );
 
@@ -1333,7 +1362,7 @@ for iZ=zRange(1):zRange(2):zRange(3)
         nNodes = size(Data.Graph.nodes,1);
         nNewNodes = size(nodes,1);
         Data.Graph.nodes(nNodes+[1:nNewNodes],1:3) = nodes;
-        
+
         nEdges = size(Data.Graph.edges,1);
         nNewEdges = size(edges,1);
         Data.Graph.edges(nEdges+[1:nNewEdges],1:2) = edges + nNodes;
@@ -1341,7 +1370,7 @@ for iZ=zRange(1):zRange(2):zRange(3)
         Data.Graph.nodes = nodes;
         Data.Graph.edges = edges;
     end
-        
+
 end
 
 set(handles.checkboxDisplayGraph,'enable','on')
@@ -1371,6 +1400,7 @@ function editGraphZrange_Callback(hObject, eventdata, handles)
 
 
 
+
 % --- Executes on button press in pushbutton_moveNodestoCenter.
 function pushbutton_moveNodestoCenter_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_moveNodestoCenter (see GCBO)
@@ -1383,3 +1413,4 @@ nodesNew = moveNodestoCenter( Data.Graph.nodes, Data.Graph.edges, permute(Data.s
 Data.Graph.nodes = nodesNew;
 
 draw(hObject, eventdata, handles)
+
