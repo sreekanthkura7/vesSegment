@@ -151,6 +151,9 @@ if strcmp(ext,'.mat')
         if isfield(Output,'fv')
             Data.fv = Output.fv;
         end
+        if isfield(Output,'Graph')
+            Data.Graph = Output.Graph;
+        end
     else
         temp = load([pathname filename]);
         fn = fieldnames(temp);
@@ -933,6 +936,9 @@ if isfield(Data,'angioF')|| isfield(Data,'angioT') || isfield(Data,'segangio')
     if isfield(Data,'fv')
         Output.fv = Data.fv;
     end
+    if isfield(Data,'Graph')
+        Output.Graph = Data.Graph;
+    end
     [FileName,PathName] = uiputfile('*.mat');
     h = waitbar(0,'Please wait... saving the data');
     save([PathName FileName],'Output');
@@ -1155,9 +1161,9 @@ if isfield(Data,'segangio')
     ylabel('X')
     zlabel('Z')
     Data.fv = fv2;
+    offset = [1,1,1];
+    save('mesh.mat','Mask','f','v','offset');
 end
-offset = [1,1,1];
-save('mesh.mat','Mask','f','v','offset');
 waitbar(1);
 close(wait_h);
 
@@ -1446,3 +1452,20 @@ function editGraphYrange_Callback(hObject, eventdata, handles)
 
 
 function editGraphZrange_Callback(hObject, eventdata, handles)
+
+
+
+
+
+% --- Executes on button press in pushbutton_moveNodestoCenter.
+function pushbutton_moveNodestoCenter_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_moveNodestoCenter (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global Data
+
+nodesNew = moveNodestoCenter( Data.Graph.nodes, Data.Graph.edges, permute(Data.segangio,[2 3 1]), 0.5 ); % permute to x,y,z
+
+Data.Graph.nodes = nodesNew;
+
+draw(hObject, eventdata, handles)
