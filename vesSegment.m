@@ -980,8 +980,23 @@ function segmentation_SeedBasedSegmentation_Callback(hObject, eventdata, handles
 
 global Data
 addpath(genpath([pwd '\seed_based_segmentation']));
+
 % Check if angioT exists before segmentation
 if isfield(Data,'segangio')
+    choice = questdlg('Use the existing segmentation as foreground seeds?',...
+                      'Seed selection','Yes','No','Cancel','Yes');
+
+    switch choice
+      case 'Cancel'
+        return
+      case 'No'
+        use_segmentation_as_fg_seeds = 0;
+      case 'Yes'
+       use_segmentation_as_fg_seeds = 1;
+    end
+end
+
+if use_segmentation_as_fg_seeds
     options.fg_seed_vol = Data.segangio;
     prompt = {'Background seed percentage :','Background seed window size :','Region size (voxels on a side) :'};
     defaultans = {'50', '75', '50'};
@@ -999,7 +1014,6 @@ else
     options.bg_win = str2double(x{4});
     options.region_size = str2double(x{5});
 end
-h = waitbar(0,'Please wait... segmenting');
 
 if isfield(Data,'angioT')
     input = Data.angioT;
@@ -1007,6 +1021,7 @@ else
     input = Data.angio;
 end
 
+options.progress = 1;
 [seg_vol, seg_prob, fg_seed_vol, bg_seed_vol] = segment_vessels_random_walker(input, options);
 Data.segangio = seg_vol;
 if isfield(Data,'procSteps')
@@ -1014,8 +1029,6 @@ if isfield(Data,'procSteps')
 else
     Data.procSteps =  {{'Seed-based segmentation'},{'Options'},{options}};
 end
-waitbar(1);
-close(h);
 
 % --- Executes on button press in pushbutton_Zoomin.
 function pushbutton_Zoomin_Callback(hObject, eventdata, handles)
