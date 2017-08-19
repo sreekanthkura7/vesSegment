@@ -24,7 +24,7 @@ function varargout = vesSegment(varargin)
 
 
 
-% Last Modified by GUIDE v2.5 10-Aug-2017 14:57:48
+% Last Modified by GUIDE v2.5 19-Aug-2017 15:28:57
 
 
 % Begin initialization code - DO NOT EDIT
@@ -256,6 +256,29 @@ else
         colorbar;
     end
 end
+
+if isfield(Data,'fg_seed_vol') && (get(handles.checkbox_showFGSeeds,'Value') == 1)
+    ZimgFG = squeeze(max(Data.fg_seed_vol(Zstartframe:Zendframe,:,:),[],1));
+    hold on
+    img = double(ZimgFG);
+    red = cat(3, ones(size(img)),zeros(size(img)), zeros(size(img)));
+    hold on
+    h = imagesc(red);
+    hold off
+    set(h, 'AlphaData', img*0.25)
+end
+
+if isfield(Data,'bg_seed_vol') && (get(handles.checkbox_showBGSeeds,'Value') == 1)
+    ZimgBG = squeeze(max(Data.bg_seed_vol(Zstartframe:Zendframe,:,:),[],1));
+    hold on
+    img = double(ZimgBG);
+    blue = cat(3, zeros(size(img)),zeros(size(img)), ones(size(img)));
+    hold on
+    h = imagesc(blue);
+    hold off
+    set(h, 'AlphaData', img*0.25)
+end
+
 axis image
 axis on
 if isfield(Data,'ZoomXrange') && isfield(Data,'ZoomYrange')
@@ -839,6 +862,24 @@ function checkbox_showSeg_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of checkbox_showSeg
 draw(hObject, eventdata, handles);
 
+% --- Executes on button press in checkbox_showFGSeeds.
+function checkbox_showFGSeeds_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox_showFGSeeds (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox_showFGSeeds
+draw(hObject, eventdata, handles);
+
+% --- Executes on button press in checkbox_showBGSeeds.
+function checkbox_showBGSeeds_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox_showBGSeeds (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox_showBGSeeds
+draw(hObject, eventdata, handles);
+
 
 % --------------------------------------------------------------------
 function Filters_ResetFilter_Callback(hObject, eventdata, handles)
@@ -916,7 +957,6 @@ function segmentation_thresholding_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-
 global Data
 % Check if angioT exists before segmentation
 if isfield(Data,'angioT')
@@ -982,6 +1022,7 @@ global Data
 addpath(genpath([pwd '\seed_based_segmentation']));
 
 % Check if angioT exists before segmentation
+use_segmentation_as_fg_seeds = 0;
 if isfield(Data,'segangio')
     choice = questdlg('Use the existing segmentation as foreground seeds?',...
                       'Seed selection','Yes','No','Cancel','Yes');
@@ -1024,6 +1065,8 @@ end
 options.progress = 1;
 [seg_vol, seg_prob, fg_seed_vol, bg_seed_vol] = segment_vessels_random_walker(input, options);
 Data.segangio = seg_vol;
+Data.fg_seed_vol = fg_seed_vol;
+Data.bg_seed_vol = bg_seed_vol;
 if isfield(Data,'procSteps')
     Data.procSteps(end+1,:) =  {{'Seed-based segmentation'},{'Options'},{options}};
 else
