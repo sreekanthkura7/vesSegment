@@ -740,24 +740,30 @@ for i = 1:length(sigma)
     %         Vs1(Lambda2>0 | Lambda3>0) = 0;
     %         Vs1(abs(Lambda1) > abs(Lambda2)) = 0;
     %         Vs = max(Vs,Vs1);
-    [Dxx, Dyy, Dzz, Dxy, Dxz, Dyz] = Hessian3D(T,sigma(i));
-    % Normalizing the Hessian Matrix
-     Dxx = sigma(i)^2*Dxx; Dyy = sigma(i)^2*Dyy;  Dzz = sigma(i)^2*Dzz; Dxy = sigma(i)^2*Dxy;  Dxz = sigma(i)^2*Dxz; Dyz = sigma(i)^2*Dyz;
-
-    [Lambda1,Lambda2,Lambda3,V1,V2,V3] = eig3volume(Dxx,Dxy,Dxz,Dyy,Dyz,Dzz);
-
-    SortL = sort([Lambda1(:)'; Lambda2(:)'; Lambda3(:)'],'ascend');
-    Lambda1 = reshape(SortL(1,:),size(Lambda1));
-    Lambda2 = reshape(SortL(2,:),size(Lambda2));
-    Lambda3 = reshape(SortL(3,:),size(Lambda3));
-
-    E = -sigma(i)^2.*Lambda2;
-    E(E<0) = 0;
+%     [Dxx, Dyy, Dzz, Dxy, Dxz, Dyz] = Hessian3D(T,sigma(i));
+%     % Normalizing the Hessian Matrix
+%      Dxx = sigma(i)^2*Dxx; Dyy = sigma(i)^2*Dyy;  Dzz = sigma(i)^2*Dzz; Dxy = sigma(i)^2*Dxy;  Dxz = sigma(i)^2*Dxz; Dyz = sigma(i)^2*Dyz;
+% 
+%     [Lambda1,Lambda2,Lambda3,V1,V2,V3] = eig3volume(Dxx,Dxy,Dxz,Dyy,Dyz,Dzz);
+% 
+%     SortL = sort([Lambda1(:)'; Lambda2(:)'; Lambda3(:)'],'ascend');
+%     Lambda1 = reshape(SortL(1,:),size(Lambda1));
+%     Lambda2 = reshape(SortL(2,:),size(Lambda2));
+%     Lambda3 = reshape(SortL(3,:),size(Lambda3));
+% 
+%     E = -sigma(i)^2.*Lambda2;
+%     E(E<0) = 0;
+%     if i == 1
+%         Emax = E;
+%     else
+%         Emax = max(E,Emax);
+%     end
     if i == 1
-        Emax = E;
+        Emax = T;
     else
-        Emax = max(E,Emax);
+        Emax = max(T,Emax);
     end
+
 end
 %     T = L;
 T = Emax;
