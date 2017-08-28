@@ -53,6 +53,9 @@ function [seg_vol, seg_prob, fg_seed_vol, bg_seed_vol] = ...
 % - verbose: [default 0] binary indicating whether extra info about
 %            operation should be printed.
 %
+% - progress: [default 0] binary indicating whether a GUI progressbar
+%              should be shown.
+%
 % Oliver Hinds <ohinds@nmr.mgh.harvard.edu> 2017-04-19
 %
 % TODO
@@ -134,6 +137,11 @@ function [seg_vol, seg_prob, fg_seed_vol, bg_seed_vol] = ...
     end
     verbose = options.verbose;
 
+    if ~isfield(options, 'progress')
+        options.progress = 0;
+    end
+    progress = options.progress;
+
     clear options;
 
     % prepare outputs
@@ -168,11 +176,25 @@ function [seg_vol, seg_prob, fg_seed_vol, bg_seed_vol] = ...
 
     % segment each region
     num_regions = length(regions);
+
+    if progress
+        progressbar = parfor_progressbar(num_regions, ['Seed-based ' ...
+                            'segmentation...']);
+    end
+
     parfor region_ind=1:length(regions)
         if verbose
             fprintf('%d/%d\n', region_ind, num_regions);
         end
-        regions{region_ind} = segment_region(regions{region_ind}, verbose)
+        regions{region_ind} = segment_region(regions{region_ind}, verbose);
+
+        if progress
+            progressbar.iterate(1);
+        end
+    end
+
+    if progress
+        close(progressbar);
     end
 
     % recombine the regions into a single volume
