@@ -24,7 +24,7 @@ function varargout = vesSegment(varargin)
 
 
 
-% Last Modified by GUIDE v2.5 19-Aug-2017 15:28:57
+% Last Modified by GUIDE v2.5 05-Sep-2017 09:27:05
 
 
 % Begin initialization code - DO NOT EDIT
@@ -153,6 +153,7 @@ if strcmp(ext,'.mat')
         end
         if isfield(Output,'Graph')
             Data.Graph = Output.Graph;
+            set(handles.checkboxDisplayGraph,'enable','on')
         end
     else
         temp = load([pathname filename]);
@@ -304,8 +305,23 @@ elseif get(handles.checkbox_showSeg,'Value') == 1 && isfield(Data,'segangio')
 %     set(h, 'AlphaData', img*0.25)
 end
 
+% Display fgseeds
+if isfield(Data,'Selected_fg_seeds')
+    hold on
+    for u = 1:length(Data.Selected_fg_seeds)
+        tempMat = Data.Selected_fg_seeds{u};
+        for v = 1:size(tempMat,1)
+        if tempMat(v,1) >= Zstartframe && tempMat(v,1) <= Zendframe
+            text(tempMat(v,3), tempMat(v,2),'X','Color','r');
+        end
+        end
+    end
+    hold off
+end
+
+
 % Display Graph
-if get(handles.checkboxDisplayGraph,'value')==1
+if isfield(Data,'Graph') && get(handles.checkboxDisplayGraph,'value')==1
     nodes = Data.Graph.nodes;
     edges = Data.Graph.edges;
     lst = find(nodes(:,1)>=Data.ZoomXrange(1) & nodes(:,1)<=Data.ZoomXrange(2) & ...
@@ -1477,3 +1493,118 @@ nodesNew = moveNodestoCenter( Data.Graph.nodes, Data.Graph.edges, permute(Data.s
 Data.Graph.nodes = nodesNew;
 
 draw(hObject, eventdata, handles)
+
+
+% --- Executes on button press in pushbutton_addfgSeeds.
+function pushbutton_addfgSeeds_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_addfgSeeds (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global Data
+[Sz,Sx,Sy] = size(Data.angio);
+temp = 0;
+if isfield(Data,'Selected_fg_seeds')
+    u = length(Data.Selected_fg_seeds)+1;
+else
+    Data.Selected_fg_seeds{1} = [];
+    u = 1;
+end    
+while(1)
+    answer = questdlg('Do you want to add fg seed');
+    if strcmp(answer,'Yes')
+        [y,x] = ginput(1);
+        z = str2double(get(handles.edit_Zstartframe,'String'));
+        if temp == 0 
+            Data.Selected_fg_seeds{u} = [z x y];
+        else
+            Data.Selected_fg_seeds{u} = [Data.Selected_fg_seeds{u}; z x y];
+        end
+    else
+        break;
+    end
+    temp = temp+1;
+end
+if get(handles.checkbox_processfgSeeds,'Value') == 1
+    if size(Data.Selected_fg_seeds{u},1) >= 1
+        addpath(genpath([pwd '\seed_based_segmentation']));
+
+    % Check if angioT exists before segmentation
+    use_segmentation_as_fg_seeds = 0;
+    if isfield(Data,'segangio')
+        choice = questdlg('Use the existing segmentation as foreground seeds?',...
+                          'Seed selection','Yes','No','Cancel','Yes');
+
+        switch choice
+          case 'Cancel'
+            return
+          case 'No'
+            use_segmentation_as_fg_seeds = 0;
+          case 'Yes'
+           use_segmentation_as_fg_seeds = 1;
+        end
+    end
+
+    if use_segmentation_as_fg_seeds
+        options.fg_seed_vol = Data.segangio;
+        prompt = {'Background seed percentage :','Background seed window size :','Region size (voxels on a side) :'};
+        defaultans = {'50', '75', '50'};
+        x = inputdlg(prompt,'Seed-based segmentation parameters',1,defaultans );
+        options.bg_percentage = str2double(x{1});
+        options.bg_win = str2double(x{2});
+        options.region_size = str2double(x{3});
+    else
+        prompt = {'Foreground seed percentage :','Foreground seed window size :','Background seed percentage :','Background seed window size :','Region size (voxels on a side) :'};
+        defaultans = {'1', '300', '50', '75', '50'};
+        x = inputdlg(prompt,'Seed-based segmentation parameters',1,defaultans );
+        options.fg_percentage = str2double(x{1});
+        options.fg_win = str2double(x{2});
+        options.bg_percentage = str2double(x{3});
+        options.bg_win = str2double(x{4});
+        options.region_size = str2double(x{5});
+    end
+    tempMat = Data.Selected_fg_seeds{u};
+%     if size(tempMat,1) >= 1
+        for vv = 1:size(tempMat,1)
+            z = round(tempMat(vv,1)); x = round(tempMat(vv,2)); y = round(tempMat(vv,3));
+            options.fg_seed_vol(z,x,y) = 1;
+        end
+        zmean = mean(tempMat(:,1));
+        xmean = mean(tempMat(:,2));
+        ymean = mean(tempMat(:,3));
+        
+        options.mask = zeros(size(Data.angio));
+        options.mask(max(min(zmean-30,1),Sz):max(min(zmean+30,1),Sz),...
+            max(min(xmean-30,1),Sx):max(min(xmean+30,1),Sx),...
+            max(min(ymean-30,1),Sy):max(min(ymean+30,1),Sy)) = 1;
+
+        if isfield(Data,'angioT')
+            input = Data.angioT;
+        else
+            input = Data.angio;
+        end
+
+        options.progress = 1;
+        [seg_vol, seg_prob, fg_seed_vol, bg_seed_vol] = segment_vessels_random_walker(input, options);
+        Data.segangio = seg_vol;
+        Data.fg_seed_vol = fg_seed_vol;
+        Data.bg_seed_vol = bg_seed_vol;
+        if isfield(Data,'procSteps')
+            Data.procSteps(end+1,:) =  {{'Seed-based segmentation'},{'Options'},{options}};
+        else
+            Data.procSteps =  {{'Seed-based segmentation'},{'Options'},{options}};
+        end
+
+    end
+%     end
+end
+
+
+
+% --- Executes on button press in checkbox_processfgSeeds.
+function checkbox_processfgSeeds_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox_processfgSeeds (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox_processfgSeeds
