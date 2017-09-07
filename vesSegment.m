@@ -24,7 +24,7 @@ function varargout = vesSegment(varargin)
 
 
 
-% Last Modified by GUIDE v2.5 19-Aug-2017 15:28:57
+% Last Modified by GUIDE v2.5 07-Sep-2017 16:23:52
 
 
 % Begin initialization code - DO NOT EDIT
@@ -1408,34 +1408,58 @@ yRange = str2num(get(handles.editGraphYrange,'string'));
 zRange = str2num(get(handles.editGraphZrange,'string'));
 
 set(handles.edit_ZMIP,'String',num2str(zRange(4)));
+set(handles.edit_XwidthZoom,'String',num2str(xRange(4)));
+set(handles.edit_YwidthZoom,'String',num2str(yRange(4)));
+
+edit_ZMIP_Callback(hObject, eventdata, handles);
+edit_XwidthZoom_Callback(hObject, eventdata, handles);
+edit_YwidthZoom_Callback(hObject, eventdata, handles);
+
+
+iiX=0;
+iiY=0;
 iiZ=0;
-for iZ=zRange(1):zRange(2):zRange(3)
-    iiZ = iiZ + 1;
-    set(handles.edit_Zstartframe,'String',num2str(iZ))
-    draw(hObject, eventdata, handles);
-    pushbutton_displayMeshVisible_Callback(hObject, 0, handles);
-    drawnow
-
-    load mesh.mat
-
-    filenm = sprintf('graph%02d.mat',iiZ);
-    graphTubularMesh( f, v, Mask, offset, filenm );
-
-    load(filenm);
-    if isfield(Data,'Graph')
-        nNodes = size(Data.Graph.nodes,1);
-        nNewNodes = size(nodes,1);
-        Data.Graph.nodes(nNodes+[1:nNewNodes],1:3) = nodes;
-
-        nEdges = size(Data.Graph.edges,1);
-        nNewEdges = size(edges,1);
-        Data.Graph.edges(nEdges+[1:nNewEdges],1:2) = edges + nNodes;
-    else
-        Data.Graph.nodes = nodes;
-        Data.Graph.edges = edges;
+for iX=xRange(1):xRange(2):xRange(3)
+    iiX = iiX + 1;
+    set(handles.edit_XcenterZoom,'String',num2str(iX+round(xRange(4)/2)));
+    edit_XcenterZoom_Callback(hObject, eventdata, handles);
+    for iY=yRange(1):yRange(2):yRange(3)
+        iiY = iiY + 1;
+        set(handles.edit_YcenterZoom,'String',num2str(iY+round(yRange(4)/2)));
+        edit_YcenterZoom_Callback(hObject, eventdata, handles);
+        for iZ=zRange(1):zRange(2):zRange(3)
+            iiZ = iiZ + 1;
+            set(handles.edit_Zstartframe,'String',num2str(iZ))
+            draw(hObject, eventdata, handles);
+            drawnow 
+            pushbutton_displayMeshVisible_Callback(hObject, 0, handles);
+            drawnow
+            
+            load mesh.mat
+            
+            filenm = sprintf('graph%02d.mat',iiZ);
+            graphTubularMesh( f, v, Mask, offset, filenm );
+            
+            load(filenm);
+            if isfield(Data,'Graph')
+                nNodes = size(Data.Graph.nodes,1);
+                nNewNodes = size(nodes,1);
+                Data.Graph.nodes(nNodes+[1:nNewNodes],1:3) = nodes;
+                
+                nEdges = size(Data.Graph.edges,1);
+                nNewEdges = size(edges,1);
+                Data.Graph.edges(nEdges+[1:nNewEdges],1:2) = edges + nNodes;
+            else
+                Data.Graph.nodes = nodes;
+                Data.Graph.edges = edges;
+            end
+            
+        end
+        iiZ = 0;
     end
-
+    iiY = 0;
 end
+
 
 set(handles.checkboxDisplayGraph,'enable','on')
 draw(hObject, eventdata, handles)
@@ -1444,11 +1468,22 @@ draw(hObject, eventdata, handles)
 % --- Executes on button press in pushbuttonGraphClear.
 function pushbuttonGraphClear_Callback(hObject, eventdata, handles)
 global Data
+
+ch = questdlg('Do you want to clear the graph?','Yes','No');
+if strcmpi(ch,'No')
+    return;
+end
+
 if exist('Data')
     if isfield(Data,'Graph')
         Data = rmfield(Data,'Graph');
     end
 end
+
+set(handles.checkboxDisplayGraph,'value',0);
+set(handles.checkboxDisplayGraph,'enable','off');
+
+
 draw(hObject, eventdata, handles)
 
 
