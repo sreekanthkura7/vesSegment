@@ -24,7 +24,11 @@ function varargout = vesSegment(varargin)
 
 
 
+<<<<<<< HEAD
 % Last Modified by GUIDE v2.5 07-Sep-2017 16:23:52
+=======
+% Last Modified by GUIDE v2.5 05-Sep-2017 09:27:05
+>>>>>>> d957b3ddfab1d030b6a33f984fff00161768c1fd
 
 
 % Begin initialization code - DO NOT EDIT
@@ -153,6 +157,7 @@ if strcmp(ext,'.mat')
         end
         if isfield(Output,'Graph')
             Data.Graph = Output.Graph;
+            set(handles.checkboxDisplayGraph,'enable','on')
         end
     else
         temp = load([pathname filename]);
@@ -305,7 +310,6 @@ elseif get(handles.checkbox_showSeg,'Value') == 1 && isfield(Data,'segangio')
 end
 
 % Display Graph
-if get(handles.checkboxDisplayGraph,'value')==1
     nodes = Data.Graph.nodes;
     edges = Data.Graph.edges;
     lst = find(nodes(:,1)>=Data.ZoomXrange(1) & nodes(:,1)<=Data.ZoomXrange(2) & ...
