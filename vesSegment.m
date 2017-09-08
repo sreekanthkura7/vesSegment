@@ -24,11 +24,9 @@ function varargout = vesSegment(varargin)
 
 
 
-<<<<<<< HEAD
+
 % Last Modified by GUIDE v2.5 07-Sep-2017 16:23:52
-=======
-% Last Modified by GUIDE v2.5 05-Sep-2017 09:27:05
->>>>>>> d957b3ddfab1d030b6a33f984fff00161768c1fd
+
 
 
 % Begin initialization code - DO NOT EDIT
