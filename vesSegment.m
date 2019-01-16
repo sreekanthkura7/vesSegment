@@ -27,7 +27,7 @@ function varargout = vesSegment(varargin)
 
 
 
-% Last Modified by GUIDE v2.5 04-Dec-2018 11:05:11
+% Last Modified by GUIDE v2.5 09-Jan-2019 01:02:12
 
 
 
@@ -220,6 +220,7 @@ function draw(hObject, eventdata, handles)
 
 global Data
 
+%%%% Select the data to display(raw dta, filter data, etc...)
 if (isfield(Data,'angioF') || isfield(Data,'angioT')) && (get(handles.checkbox_showFiltData,'Value') == 1)
     if isfield(Data,'angioT')
         I = Data.angioT;
@@ -232,8 +233,10 @@ else
     I = Data.angio;
 end
 
-[Sz,Sx,Sy] = size(I);
+[Sz,Sy,Sx] = size(I);
 
+
+%%%% Read display range
 Zstartframe = str2double(get(handles.edit_Zstartframe,'String'));
 Zstartframe = min(max(Zstartframe,1),Sz);
 ZMIP = str2double(get(handles.edit_ZMIP,'String'));
@@ -250,6 +253,8 @@ Data.ZoomXrange = [Xstartframe Xendframe];
 Data.ZoomYrange = [Ystartframe Yendframe];
 Data.ZoomZrange = [Zstartframe Zendframe];
 Zimg = squeeze(max(I(Zstartframe:Zendframe,:,:),[],1));
+ZimgXZ = squeeze(max(I(:,Ystartframe:Yendframe,:),[],2));
+ZimgYZ = squeeze(max(I(:,:,Xstartframe:Xendframe),[],3));
 %Ximg = squeeze(max(I(:,Xstartframe:Xendframe,:),[],2));
 %Yimg = squeeze(max(I(:,:,Ystartframe:Yendframe),[],3));
 %ZMIPimg = squeeze(max(I,[],1));
@@ -380,12 +385,26 @@ if get(handles.checkbox_verifySegments,'Value') && (isfield(Data,'Graph') && isf
     maxI = str2double(get(handles.edit_maxI,'String'));
     minI = str2double(get(handles.edit_minI,'String'));
     colormap('gray')
-    I_h = imagesc(Zimg,[minI maxI]);
+    if get(handles.radiobutton_XYview,'Value')
+        I_h = imagesc(Zimg,[minI maxI]);
+    elseif get(handles.radiobutton_XZview,'Value')
+        I_h = imagesc(ZimgXZ,[minI maxI]);
+    else
+        I_h = imagesc(ZimgYZ,[minI maxI]);
+    end
     axis image;
     axis on
     if isfield(Data,'ZoomXrange') && isfield(Data,'ZoomYrange')
-        xlim(Data.ZoomXrange);
-        ylim(Data.ZoomYrange);
+        if get(handles.radiobutton_XYview,'Value')
+            xlim(Data.ZoomXrange);
+            ylim(Data.ZoomYrange);
+        elseif get(handles.radiobutton_XZview,'Value')
+            xlim(Data.ZoomXrange);
+            ylim(Data.ZoomZrange);
+        else
+            xlim(Data.ZoomYrange);
+            ylim(Data.ZoomZrange);
+        end
     end
     if get(handles.radiobutton_selectSegment,'Value') == 1 || get(handles.radiobutton_addEdge,'Value') == 1  
             set(I_h, 'ButtonDownFcn', {@axes_ButtonDown, handles});
@@ -432,10 +451,24 @@ else
         ce = 'c-';
     end
 end
-     h=plot(nodes(lstseg,1),nodes(lstseg,2),cn); 
+%      h=plot(nodes(lstseg,1),nodes(lstseg,2),cn); 
+if get(handles.radiobutton_XYview,'Value')
+    h=plot(nodes(lstseg,1),nodes(lstseg,2),cn);
+elseif get(handles.radiobutton_XZview,'Value')
+    h=plot(nodes(lstseg,1),nodes(lstseg,3),cn);
+else
+    h=plot(nodes(lstseg,2),nodes(lstseg,3),cn);
+end
      lstseg_edges = find(Data.Graph.segInfo.edgeSegN == Data.Graph.segno);
      for ii = 1:length(lstseg_edges)
-          h = plot(nodes(edges(lstseg_edges(ii),:),1), nodes(edges(lstseg_edges(ii),:),2), ce );
+%           h = plot(nodes(edges(lstseg_edges(ii),:),1), nodes(edges(lstseg_edges(ii),:),2), ce );
+          if get(handles.radiobutton_XYview,'Value')
+              h = plot(nodes(edges(lstseg_edges(ii),:),1), nodes(edges(lstseg_edges(ii),:),2), ce );
+          elseif get(handles.radiobutton_XZview,'Value')
+              h = plot(nodes(edges(lstseg_edges(ii),:),1), nodes(edges(lstseg_edges(ii),:),3), ce );
+          else
+              h = plot(nodes(edges(lstseg_edges(ii),:),2), nodes(edges(lstseg_edges(ii),:),3), ce );
+          end
      end
 %      for ii=1:length(lstseg)
 %             lst2 = find(edges(:,1)==lstseg(ii));
@@ -454,6 +487,7 @@ end
      idx2 = find((Data.Graph.segInfo.segEndNodes(:,1) == u2) | (Data.Graph.segInfo.segEndNodes(:,2) == u2));
      idx = setdiff([idx1;idx2],Data.Graph.segno); 
      
+     %%%Display segments to delete
      for uu = 1:length(idx)
          if isfield(Data.Graph,'segmentstodelete') 
              if sum(ismember(Data.Graph.segmentstodelete,idx(uu))) ~= 0
@@ -469,10 +503,24 @@ end
          end
          hold on
          seg_nodes = find(Data.Graph.segInfo.nodeSegN == idx(uu));
-           h=plot(nodes(seg_nodes,1),nodes(seg_nodes,2),cn);
+%            h=plot(nodes(seg_nodes,1),nodes(seg_nodes,2),cn);
+           if get(handles.radiobutton_XYview,'Value')
+               h=plot(nodes(seg_nodes,1),nodes(seg_nodes,2),cn);
+           elseif get(handles.radiobutton_XZview,'Value')
+               h=plot(nodes(seg_nodes,1),nodes(seg_nodes,3),cn);
+           else
+               h=plot(nodes(seg_nodes,2),nodes(seg_nodes,3),cn);
+           end
            lstseg_edges = find(Data.Graph.segInfo.edgeSegN == idx(uu));
            for ii = 1:length(lstseg_edges)
-               h = plot(nodes(edges(lstseg_edges(ii),:),1), nodes(edges(lstseg_edges(ii),:),2), ce );
+%                h = plot(nodes(edges(lstseg_edges(ii),:),1), nodes(edges(lstseg_edges(ii),:),2), ce );
+                if get(handles.radiobutton_XYview,'Value')
+                    h = plot(nodes(edges(lstseg_edges(ii),:),1), nodes(edges(lstseg_edges(ii),:),2), ce );
+                elseif get(handles.radiobutton_XZview,'Value')
+                    h = plot(nodes(edges(lstseg_edges(ii),:),1), nodes(edges(lstseg_edges(ii),:),3), ce );
+                else
+                    h = plot(nodes(edges(lstseg_edges(ii),:),2), nodes(edges(lstseg_edges(ii),:),3), ce );
+                end
            end
 %          seg_nodes = intersect(seg_nodes,lstvisible);
 %          h=plot(nodes(seg_nodes,1),nodes(seg_nodes,2),'m.'); 
@@ -806,7 +854,13 @@ else
     colormap('gray')
     maxI = str2double(get(handles.edit_maxI,'String'));
     minI = str2double(get(handles.edit_minI,'String'));
-    I_h = imagesc(Zimg,[minI maxI]);
+    if get(handles.radiobutton_XYview,'Value')
+        I_h = imagesc(Zimg,[minI maxI]);
+    elseif get(handles.radiobutton_XZview,'Value')
+        I_h = imagesc(ZimgXZ,[minI maxI]);
+    else
+        I_h = imagesc(ZimgYZ,[minI maxI]);
+    end
     if isfield(Data,'segangio') && (get(handles.checkbox_showSeg,'Value') == 1)
         hold on
         img = double(ZimgS);
@@ -846,8 +900,16 @@ else
     axis image
     axis on
     if isfield(Data,'ZoomXrange') && isfield(Data,'ZoomYrange')
-        xlim(Data.ZoomXrange);
-        ylim(Data.ZoomYrange);
+        if get(handles.radiobutton_XYview,'Value')
+            xlim(Data.ZoomXrange);
+            ylim(Data.ZoomYrange);
+        elseif get(handles.radiobutton_XZview,'Value')
+            xlim(Data.ZoomXrange);
+            ylim(Data.ZoomZrange);
+        else
+            xlim(Data.ZoomYrange);
+            ylim(Data.ZoomZrange);
+        end
     end
     elseif get(handles.checkbox_showSeg,'Value') == 1 && isfield(Data,'segangio')
     %     C = [0 0 0; 0 0.25 0; 0 0.5 0; 0 1 0];
@@ -899,7 +961,14 @@ else
     %      end
     %     c = 'm.';
         hold on
-        h=plot(nodes(lst,1),nodes(lst,2),'m.');
+%         h=plot(nodes(lst,1),nodes(lst,2),'m.');
+        if get(handles.radiobutton_XYview,'Value')
+            h=plot(nodes(lst,1),nodes(lst,2),'m.');
+        elseif get(handles.radiobutton_XZview,'Value')
+            h=plot(nodes(lst,1),nodes(lst,3),'m.');
+        else
+            h=plot(nodes(lst,2),nodes(lst,3),'m.');
+        end
         % for u = 1:length(lst)
         %    
         % end
@@ -907,17 +976,24 @@ else
         if isfield(Data.Graph,'verifiedNodes')
             lstg = find(nodes(:,1)>=Data.ZoomXrange(1) & nodes(:,1)<=Data.ZoomXrange(2) & ...
                    nodes(:,2)>=Data.ZoomYrange(1) & nodes(:,2)<=Data.ZoomYrange(2) & ...
-                   nodes(:,3)>=Zstartframe & nodes(:,3)<=Zendframe & Data.Graph.verifiedNodes == 1 );
-             h=plot(nodes(lstg,1),nodes(lstg,2),'g.');
+                   nodes(:,3)>=Zstartframe & nodes(:,3)<=Zendframe & Data.Graph.verifiedNodes > 1 );
+%              h=plot(nodes(lstg,1),nodes(lstg,2),'g.');
+             if get(handles.radiobutton_XYview,'Value')
+                  h=plot(nodes(lstg,1),nodes(lstg,2),'g.');
+             elseif get(handles.radiobutton_XZview,'Value')
+                  h=plot(nodes(lstg,1),nodes(lstg,3),'g.');
+             else
+                  h=plot(nodes(lstg,2),nodes(lstg,3),'g.');
+             end
 
-             lsts = find(nodes(:,1)>=Data.ZoomXrange(1) & nodes(:,1)<=Data.ZoomXrange(2) & ...
-                   nodes(:,2)>=Data.ZoomYrange(1) & nodes(:,2)<=Data.ZoomYrange(2) & ...
-                   nodes(:,3)>=Zstartframe & nodes(:,3)<=Zendframe & Data.Graph.verifiedNodes == 2 );
-             h=plot(nodes(lsts,1),nodes(lsts,2),'g*','MarkerSize',15);  
-             lstseg = find(nodes(:,1)>=Data.ZoomXrange(1) & nodes(:,1)<=Data.ZoomXrange(2) & ...
-                   nodes(:,2)>=Data.ZoomYrange(1) & nodes(:,2)<=Data.ZoomYrange(2) & ...
-                   nodes(:,3)>=Zstartframe & nodes(:,3)<=Zendframe & Data.Graph.verifiedNodes == 3 );
-             h=plot(nodes(lstseg,1),nodes(lstseg,2),'g.');  
+%              lsts = find(nodes(:,1)>=Data.ZoomXrange(1) & nodes(:,1)<=Data.ZoomXrange(2) & ...
+%                    nodes(:,2)>=Data.ZoomYrange(1) & nodes(:,2)<=Data.ZoomYrange(2) & ...
+%                    nodes(:,3)>=Zstartframe & nodes(:,3)<=Zendframe & Data.Graph.verifiedNodes == 2 );
+%              h=plot(nodes(lsts,1),nodes(lsts,2),'g*','MarkerSize',15);  
+%              lstseg = find(nodes(:,1)>=Data.ZoomXrange(1) & nodes(:,1)<=Data.ZoomXrange(2) & ...
+%                    nodes(:,2)>=Data.ZoomYrange(1) & nodes(:,2)<=Data.ZoomYrange(2) & ...
+%                    nodes(:,3)>=Zstartframe & nodes(:,3)<=Zendframe & Data.Graph.verifiedNodes == 3 );
+%              h=plot(nodes(lstseg,1),nodes(lstseg,2),'g.');  
         end
         set(h,'markersize',12)
         if isfield(Data.Graph,'nodeS')
@@ -930,7 +1006,14 @@ else
         if 1
             foo = ismember(edges,lst);
             lst2 = find(sum(foo,2)==2);
-                h = plot([nodes(edges(lst2,1),1) nodes(edges(lst2,2),1)]', [nodes(edges(lst2,1),2) nodes(edges(lst2,2),2)]', 'm-' );
+%                 h = plot([nodes(edges(lst2,1),1) nodes(edges(lst2,2),1)]', [nodes(edges(lst2,1),2) nodes(edges(lst2,2),2)]', 'm-' );
+                if get(handles.radiobutton_XYview,'Value')
+                    h = plot([nodes(edges(lst2,1),1) nodes(edges(lst2,2),1)]', [nodes(edges(lst2,1),2) nodes(edges(lst2,2),2)]', 'm-' );
+                elseif get(handles.radiobutton_XZview,'Value')
+                    h = plot([nodes(edges(lst2,1),1) nodes(edges(lst2,2),1)]', [nodes(edges(lst2,1),3) nodes(edges(lst2,2),3)]', 'm-' );
+                else
+                    h = plot([nodes(edges(lst2,1),2) nodes(edges(lst2,2),2)]', [nodes(edges(lst2,1),3) nodes(edges(lst2,2),3)]', 'm-' );
+                end
                 %                h = plot(nodes(edges(lst2,:),1), 'm-' );
                 if get(handles.radiobutton_validateNodes,'Value') == 1 || get(handles.radiobutton_addEdge,'Value') == 1 ...
                         || get(handles.radiobutton_selectSegment,'Value') == 1 || get(handles.radiobutton_unvalidateNodes,'Value') == 1
@@ -951,54 +1034,61 @@ else
                  || get(handles.radiobutton_selectSegment,'Value') == 1 || get(handles.radiobutton_unvalidateNodes,'Value') == 1
             set(I_h, 'ButtonDownFcn', {@axes_ButtonDown, handles});
         end
-        if isfield(Data.Graph,'verifiedNodes')
-             foo = ismember(edges,lstg);
-            lst2 = find(sum(foo,2)==2);
-                h = plot([nodes(edges(lst2,1),1) nodes(edges(lst2,2),1)]', [nodes(edges(lst2,1),2) nodes(edges(lst2,2),2)]', 'g-' );
-                %                h = plot(nodes(edges(lst2,:),1), 'm-' );
-                if get(handles.radiobutton_validateNodes,'Value') == 1 || get(handles.radiobutton_addEdge,'Value') == 1 ...
-                        || get(handles.radiobutton_selectSegment,'Value') == 1 || get(handles.radiobutton_unvalidateNodes,'Value') == 1
-                    set(h, 'ButtonDownFcn', {@axes_ButtonDown, handles});
-                end
-%             for ii=1:length(lstg)
-%                 lst2 = find(edges(:,1)==lstg(ii));
-%                 h = plot(nodes(edges(lst2,:),1), nodes(edges(lst2,:),2), 'g-' );
+%         if isfield(Data.Graph,'verifiedNodes')
+%              foo = ismember(edges,lstg);
+%             lst2 = find(sum(foo,2)==2);
+% %                 h = plot([nodes(edges(lst2,1),1) nodes(edges(lst2,2),1)]', [nodes(edges(lst2,1),2) nodes(edges(lst2,2),2)]', 'g-' );
+%                 if get(handles.radiobutton_XYview,'Value')
+%                     h = plot([nodes(edges(lst2,1),1) nodes(edges(lst2,2),1)]', [nodes(edges(lst2,1),2) nodes(edges(lst2,2),2)]', 'g-' );
+%                 elseif get(handles.radiobutton_XZview,'Value')
+%                     h = plot([nodes(edges(lst2,1),1) nodes(edges(lst2,3),1)]', [nodes(edges(lst2,2),2) nodes(edges(lst2,3),2)]', 'g-' );
+%                 else
+%                     h = plot([nodes(edges(lst2,1),1) nodes(edges(lst2,3),1)]', [nodes(edges(lst2,1),2) nodes(edges(lst2,3),2)]', 'g-' );
+%                 end
+%                 %                h = plot(nodes(edges(lst2,:),1), 'm-' );
 %                 if get(handles.radiobutton_validateNodes,'Value') == 1 || get(handles.radiobutton_addEdge,'Value') == 1 ...
-%                      || get(handles.radiobutton_selectSegment,'Value') == 1 || get(handles.radiobutton_unvalidateNodes,'Value') == 1
+%                         || get(handles.radiobutton_selectSegment,'Value') == 1 || get(handles.radiobutton_unvalidateNodes,'Value') == 1
 %                     set(h, 'ButtonDownFcn', {@axes_ButtonDown, handles});
 %                 end
-%             end
-        end
+% %             for ii=1:length(lstg)
+% %                 lst2 = find(edges(:,1)==lstg(ii));
+% %                 h = plot(nodes(edges(lst2,:),1), nodes(edges(lst2,:),2), 'g-' );
+% %                 if get(handles.radiobutton_validateNodes,'Value') == 1 || get(handles.radiobutton_addEdge,'Value') == 1 ...
+% %                      || get(handles.radiobutton_selectSegment,'Value') == 1 || get(handles.radiobutton_unvalidateNodes,'Value') == 1
+% %                     set(h, 'ButtonDownFcn', {@axes_ButtonDown, handles});
+% %                 end
+% %             end
+%         end
         lsttemp = lst;
         seglst = [];
         
-        while ~isempty(lsttemp)
-            lstnode = lsttemp(1);
-            segtemp = Data.Graph.segInfo.nodeSegN(lstnode);
-            nodeslst = find(Data.Graph.segInfo.nodeSegN == segtemp);
-            lsttemp = setdiff(lsttemp,nodeslst);
-            seglst = [seglst; segtemp];
-        end 
-        
-%         
-        idx = find(ismember(Data.Graph.segmentstodelete,seglst) == 1);
-        seglst = Data.Graph.segmentstodelete(idx);
-        nodesidx = find(ismember(Data.Graph.segInfo.nodeSegN,seglst)==1);
-        nodesidx = nodesidx(find(ismember(nodesidx,lst)==1));
-        endNodes = Data.Graph.segInfo.segEndNodes(seglst,:);
-        nodesidx = unique([nodesidx;endNodes(:)]);
-        h=plot(nodes(nodesidx,1),nodes(nodesidx,2),'r.');
-        foo = ismember(edges,nodesidx);
-        lst2 = find(sum(foo,2)==2);
-        edgesidx = find(ismember(Data.Graph.segInfo.edgeSegN,seglst)==1);
-        edgesidx =  edgesidx(find(ismember(edgesidx,lst2)==1));
-        for ii = 1:length(edgesidx)
-            h = plot(nodes(edges(edgesidx(ii),:),1), nodes(edges(edgesidx(ii),:),2), 'r-' );
-            if get(handles.radiobutton_validateNodes,'Value') == 1 || get(handles.radiobutton_addEdge,'Value') == 1 ...
-                    || get(handles.radiobutton_selectSegment,'Value') == 1 || get(handles.radiobutton_unvalidateNodes,'Value') == 1
-                set(h, 'ButtonDownFcn', {@axes_ButtonDown, handles});
-            end
-        end
+%                                         while ~isempty(lsttemp)
+%                                             lstnode = lsttemp(1);
+%                                             segtemp = Data.Graph.segInfo.nodeSegN(lstnode);
+%                                             nodeslst = find(Data.Graph.segInfo.nodeSegN == segtemp);
+%                                             lsttemp = setdiff(lsttemp,nodeslst);
+%                                             seglst = [seglst; segtemp];
+%                                         end 
+% 
+%                                 %         
+%                                         idx = find(ismember(Data.Graph.segmentstodelete,seglst) == 1);
+%                                         seglst = Data.Graph.segmentstodelete(idx);
+%                                         nodesidx = find(ismember(Data.Graph.segInfo.nodeSegN,seglst)==1);
+%                                         nodesidx = nodesidx(find(ismember(nodesidx,lst)==1));
+%                                         endNodes = Data.Graph.segInfo.segEndNodes(seglst,:);
+%                                         nodesidx = unique([nodesidx;endNodes(:)]);
+%                                         h=plot(nodes(nodesidx,1),nodes(nodesidx,2),'r.');
+%                                         foo = ismember(edges,nodesidx);
+%                                         lst2 = find(sum(foo,2)==2);
+%                                         edgesidx = find(ismember(Data.Graph.segInfo.edgeSegN,seglst)==1);
+%                                         edgesidx =  edgesidx(find(ismember(edgesidx,lst2)==1));
+%                                         for ii = 1:length(edgesidx)
+%                                             h = plot(nodes(edges(edgesidx(ii),:),1), nodes(edges(edgesidx(ii),:),2), 'r-' );
+%                                             if get(handles.radiobutton_validateNodes,'Value') == 1 || get(handles.radiobutton_addEdge,'Value') == 1 ...
+%                                                     || get(handles.radiobutton_selectSegment,'Value') == 1 || get(handles.radiobutton_unvalidateNodes,'Value') == 1
+%                                                 set(h, 'ButtonDownFcn', {@axes_ButtonDown, handles});
+%                                             end
+%                                         end
 
 %         for u = 1:length(seglst)
 %             
@@ -2984,16 +3074,16 @@ if isfield(Data,'segangio')
     figure(2);
     clf
 
-    if eventdata~=1
-        h=trisurf(f,v(:,1),v(:,2),v(:,3),'facecolor','red','edgecolor','none');
-        daspect([1,1,1])
-        view(3); axis tight
-        camlight
-        lighting gouraud
-        xlabel('X')
-        ylabel('Y')
-        zlabel('Z')
-    end
+%     if eventdata~=1
+%         h=trisurf(f,v(:,1),v(:,2),v(:,3),'facecolor','red','edgecolor','none');
+%         daspect([1,1,1])
+%         view(3); axis tight
+%         camlight
+%         lighting gouraud
+%         xlabel('X')
+%         ylabel('Y')
+%         zlabel('Z')
+%     end
 
     offset = [Xstartframe,Ystartframe,Zstartframe];
     save('mesh.mat','Mask','f','v','offset');
@@ -3218,8 +3308,8 @@ for iX=xRange(1):xRange(2):xRange(3)
             set(handles.edit_Zstartframe,'String',num2str(iZ))
             draw(hObject, eventdata, handles);
             drawnow 
-%             pushbutton_displayMeshVisible_Callback(hObject, 0, handles);
-%             drawnow
+            pushbutton_displayMeshVisible_Callback(hObject, 0, handles);
+            drawnow
             
             load mesh.mat
             
@@ -3689,17 +3779,53 @@ global Data
 
 keyPressed = eventdata.Key;
 if strcmpi(keyPressed,'q')
-    pushbutton_Zmoveleft_Callback(hObject, eventdata, handles)
+    if get(handles.radiobutton_XYview,'Value')
+        pushbutton_Zmoveleft_Callback(hObject, eventdata, handles)
+    elseif get(handles.radiobutton_XZview,'Value')
+        pushbutton_Ymoveleft_Callback(hObject, eventdata, handles)
+    else
+        pushbutton_Xmoveleft_Callback(hObject, eventdata, handles)
+    end
 elseif strcmpi(keyPressed,'e')
-    pushbutton_Zmoveright_Callback(hObject, eventdata, handles)
+    if get(handles.radiobutton_XYview,'Value')
+        pushbutton_Zmoveright_Callback(hObject, eventdata, handles)
+    elseif get(handles.radiobutton_XZview,'Value')
+        pushbutton_Ymoveright_Callback(hObject, eventdata, handles)
+    else
+        pushbutton_Xmoveright_Callback(hObject, eventdata, handles)
+    end
 elseif strcmpi(keyPressed,'a')
-    pushbutton_Xmoveleft_Callback(hObject, eventdata, handles)
+    if get(handles.radiobutton_XYview,'Value')
+        pushbutton_Xmoveleft_Callback(hObject, eventdata, handles)
+    elseif get(handles.radiobutton_XZview,'Value')
+        pushbutton_Xmoveleft_Callback(hObject, eventdata, handles)
+    else
+        pushbutton_Ymoveright_Callback(hObject, eventdata, handles)
+    end
 elseif strcmpi(keyPressed,'d')
-    pushbutton_Xmoveright_Callback(hObject, eventdata, handles)
+    if get(handles.radiobutton_XYview,'Value')
+        pushbutton_Xmoveright_Callback(hObject, eventdata, handles)
+    elseif get(handles.radiobutton_XZview,'Value')
+        pushbutton_Xmoveright_Callback(hObject, eventdata, handles)
+    else
+        pushbutton_Ymoveleft_Callback(hObject, eventdata, handles)
+    end
 elseif strcmpi(keyPressed,'w')
-    pushbutton_Ymoveleft_Callback(hObject, eventdata, handles)
+    if get(handles.radiobutton_XYview,'Value')
+        pushbutton_Ymoveleft_Callback(hObject, eventdata, handles)
+    elseif get(handles.radiobutton_XZview,'Value')
+        pushbutton_Zmoveleft_Callback(hObject, eventdata, handles)
+    else
+        pushbutton_Zmoveleft_Callback(hObject, eventdata, handles)
+    end
 elseif strcmpi(keyPressed,'s')
-    pushbutton_Ymoveright_Callback(hObject, eventdata, handles)
+    if get(handles.radiobutton_XYview,'Value')
+        pushbutton_Ymoveright_Callback(hObject, eventdata, handles)
+    elseif get(handles.radiobutton_XZview,'Value')
+        pushbutton_Zmoveright_Callback(hObject, eventdata, handles)
+    else
+        pushbutton_Zmoveright_Callback(hObject, eventdata, handles)
+    end
 elseif strcmpi(keyPressed,'escape')
     if isfield(Data.Graph,'addSegment')
         Data.Graph = rmfield(Data.Graph,'addSegment');
@@ -4729,7 +4855,7 @@ if get(handles.checkbox_verifySegments,'Value') && isfield(Data.Graph,'segInfo')
     else
         u = 1;
         Data.Graph.segno = u;
-        Data.Graph.verifiedSegments = zeros(size(segpos,1),1);
+        Data.Graph.verifiedSegments = zeros(size(segPos,1),1);
     end
     
     Data.Graph.segno = u;
@@ -5925,7 +6051,6 @@ function segmentation_loadSegmentation_Callback(hObject, eventdata, handles)
 
 global Data
 
-
 [filename,pathname] = uigetfile({'*.mat;*.tiff;*.tif'},'Please select the Angiogram Data');
 h = waitbar(0,'Please wait... loading the data');
 [~,~,ext] = fileparts(filename);
@@ -5948,4 +6073,41 @@ elseif strcmp(ext,'.tiff') || strcmp(ext,'.tif')
 end
 Data.segangio(Data.segangio > 1) = 1;
 close(h);
+draw(hObject, eventdata, handles);
+
+
+% --- Executes on button press in radiobutton_XYview.
+function radiobutton_XYview_Callback(hObject, eventdata, handles)
+% hObject    handle to radiobutton_XYview (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of radiobutton_XYview
+set(handles.radiobutton_XYview,'value',1);
+set(handles.radiobutton_XZview,'value',0);
+set(handles.radiobutton_YZview,'value',0);
+draw(hObject, eventdata, handles);
+
+% --- Executes on button press in radiobutton_XZview.
+function radiobutton_XZview_Callback(hObject, eventdata, handles)
+% hObject    handle to radiobutton_XZview (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of radiobutton_XZview
+set(handles.radiobutton_XZview,'value',1);
+set(handles.radiobutton_XYview,'value',0);
+set(handles.radiobutton_YZview,'value',0);
+draw(hObject, eventdata, handles);
+
+% --- Executes on button press in radiobutton_YZview.
+function radiobutton_YZview_Callback(hObject, eventdata, handles)
+% hObject    handle to radiobutton_YZview (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of radiobutton_YZview
+set(handles.radiobutton_YZview,'value',1);
+set(handles.radiobutton_XZview,'value',0);
+set(handles.radiobutton_XYview,'value',0);
 draw(hObject, eventdata, handles);
